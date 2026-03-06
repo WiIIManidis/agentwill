@@ -3,7 +3,7 @@ load_dotenv()
 
 import os
 
-AGENT_NAME = "AgentWill"
+AGENT_NAME = "Will"
 INITIAL_BUDGET = 0.0 # Starting budget for operations
 TARGET_REVENUE = 50000.0
 LOG_FILE = "logs/agent_will.log"
