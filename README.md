@@ -19,7 +19,7 @@ To demonstrate fully autonomous AI driven business creation and scaling.
 *   **Tasks:**
     *   `DONE` Setup OpenClaw environment.
     *   `DONE` Configure core agent personality and objective function.
-    *   `DONE` Integrate initial toolset (Web Search, Basic Content Generation).
+    *   `DONE` Integrate initial toolset (Web Search, Content Generator, Data Analyzer, Budget Manager).
     *   `DONE` Define initial budget parameters ($0 start).
 *   **Success Metrics:** Agent responsiveness, successful tool calls, budget integration confirmed.
 *   **Completion Criteria:** Core `agent_will.py` successfully initializes and passes self-tests.
@@ -36,7 +36,7 @@ To demonstrate fully autonomous AI driven business creation and scaling.
 
 ### Phase 2: MVP Development & Initial Offering
 *   **Objective:** Create a Minimum Viable Product (MVP) and initial offering.
-*   **Tasks:
+*   **Tasks:**
     *   Define MVP features based on selected niche.
     *   Utilize content generation tools for basic marketing copy and product descriptions.
     *   Set up a simple landing page/platform (via integrated web builder).
@@ -46,17 +46,17 @@ To demonstrate fully autonomous AI driven business creation and scaling.
 
 ### Phase 3: Customer Acquisition & First Revenue
 *   **Objective:** Acquire initial customers and generate first revenue.
-*   **Tasks:
+*   **Tasks:**
     *   Implement initial marketing tactics (e.g., targeted social media outreach, SEO).
     *   Track user engagement and conversion rates.
-    *   Integrate payment processing (simulated for now, actual later).
+    *   Integrate payment processing (e.g., Stripe).
     *   Collect customer feedback.
 *   **Success Metrics:** 10+ active users, first paid transactions, initial feedback collected.
 *   **Completion Criteria:** Achieve $100 in monthly recurring revenue (MRR).
 
 ### Phase 4: Scaling & Optimization (Repeat until $50K/month)
 *   **Objective:** Iteratively scale operations, optimize offerings, and acquire more customers.
-*   **Tasks:
+*   **Tasks:**
     *   Analyze performance data (conversion, churn, LTV).
     *   Iterate on product/service based on feedback and data.
     *   Expand marketing channels and refine strategies (e.g., partnerships, advanced SEO).
@@ -67,9 +67,20 @@ To demonstrate fully autonomous AI driven business creation and scaling.
 
 ## OpenClaw Agent Components
 *   `agent_will.py`: Core agent logic, decision-making, task orchestration.
-*   `tools/`: Directory for integrated tools (web search, content generation, analytics, etc.).
+*   `tools/`: Directory for integrated tools.
+    *   `tools/web_search.py`: Tool for performing web searches.
+    *   `tools/content_generator.py`: Tool for generating various forms of content.
+    *   `tools/data_analyzer.py`: Tool for analyzing data and generating insights.
+    *   `tools/budget_manager.py`: Tool for managing financial transactions and budget.
 *   `config.py`: Agent configuration, budget limits, ethical constraints.
+*   `requirements.txt`: Lists project dependencies.
+*   `.env.example`: Example environment variables file.
 *   `logs/`: Directory for all agent actions, decisions, and outcomes.
+    *   `logs/.gitkeep`: Placeholder to ensure directory is tracked.
 
-## Ethics & Compliance
-AgentWill is programmed to operate strictly within legal and ethical boundaries. All actions are logged and auditable.
+## Ethical Guidelines
+AgentWill operates under the following strict ethical guidelines:
+*   **ETHICAL_GUIDELINE_1**: All business activities must be legal and comply with relevant laws and regulations.
+*   **ETHICAL_GUIDELINE_2**: AgentWill will not engage in deceptive, misleading, or fraudulent practices.
+*   **ETHICAL_GUIDELINE_3**: User data privacy and security must be protected at all times, adhering to best practices and regulations (e.g., GDPR, CCPA).
+*   **ETHICAL_GUIDELINE_4**: AgentWill will prioritize creating genuine value for customers and avoid exploitative business models.
