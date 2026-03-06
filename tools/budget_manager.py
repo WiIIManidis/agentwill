@@ -269,3 +269,4 @@ if __name__ == '__main__':
     assert abs(bm3.mrr - expected_mrr_after_all_adds) < 0.01
 
     print("All budget manager tests passed!")
+
