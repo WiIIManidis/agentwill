@@ -3,5 +3,4 @@ requests
 python-dotenv
 openai
 anthropic
-beehiiv          # for Phase 4 newsletter automation
 stripe
