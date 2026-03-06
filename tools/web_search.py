@@ -18,3 +18,4 @@ class WebSearchTool:
             ]
         return [f"Mock search result for '{query}' - identifying potential niche: AI-powered marketing for small businesses."]
 
+
