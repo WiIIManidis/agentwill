@@ -21,8 +21,6 @@ class AgentWill:
             "data_analyzer": DataAnalyzerTool(),
             "budget_manager": self.budget_manager # Add budget_manager instance to tools
         }
-        self.revenue = 0.0 # This should ideally be synchronized or derived from MRR in budget_manager or data_analyzer
-        self.mrr = 0.0 # Monthly Recurring Revenue
         self.phase = "Initialization"
         self.objectives = [
             "Identify a viable market niche",
@@ -44,194 +42,236 @@ class AgentWill:
             "cost": cost,
             "revenue_impact": revenue_impact,
             "outcome": outcome,
-            "current_revenue": self.revenue, # This might become redundant if MRR is primary metric
-            "current_mrr": self.mrr,
+            "current_mrr": self.budget_manager.mrr,
             "current_budget": self.budget_manager.current_budget
         }
         with open(LOG_FILE, 'a') as f:
             f.write(json.dumps(log_entry) + '\n')
-        print(f"[{timestamp}] {self.name} ({self.phase}): {action_description} [MRR: ${self.mrr:.2f}, Budget: ${self.budget_manager.current_budget:.2f}]")
+        print(f"[{timestamp}] {self.name} ({self.phase}): {action_description} [MRR: ${self.budget_manager.mrr:.2f}, Budget: ${self.budget_manager.current_budget:.2f}]")
 
     def make_decision(self, context):
-        # A placeholder for advanced LLM-driven decision making
         # In a real OpenClaw agent, this would involve complex reasoning
         # using an LLM to choose the best action based on context, objectives, and tool capabilities.
         self.log_action(f"Analyzing context for decision: {context}")
 
         # Update phase based on MRR before making decisions
-        budget_status = self.budget_manager.check_budget_status(self.mrr)
+        budget_status = self.budget_manager.check_budget_status(self.budget_manager.mrr)
         self.phase = budget_status['current_mrr_phase']
 
-        if "market research" in context.lower() and self.current_objective_index == 0:
-            return "perform_market_research"
-        elif "create content" in context.lower():
-            return "generate_marketing_content"
-        elif "analyze data" in context.lower():
-            return "analyze_performance"
-        elif self.mrr >= 50000.0 and self.current_objective_index == len(self.objectives) - 1:
-            return "mission_accomplished"
-        elif "next objective" in context.lower() or "move to next phase" in context.lower():
-            if self.current_objective_index < len(self.objectives) - 1:
-                self.current_objective_index += 1
-                # Phase will be updated by check_budget_status in the next loop iteration
-                self.log_action(f"Moving to next objective: {self.objectives[self.current_objective_index]}")
-                return self.objective_to_action(self.objectives[self.current_objective_index])
-            else:
-                return "mission_accomplished"
-        else:
-            # Default action based on current objective if no specific trigger
-            return self.objective_to_action(self.objectives[self.current_objective_index])
+        # Simulate LLM-driven ReAct reasoning
+        # This is a placeholder for an actual LLM call that would return a structured action.
+        # For demonstration, we'll still use some keyword matching but frame it as an LLM output.
 
-    def objective_to_action(self, objective):
-        if "market niche" in objective:
-            return "perform_market_research"
-        elif "MVP" in objective:
-            return "design_and_build_mvp" # Placeholder for complex build tasks
-        elif "paying customers" in objective:
-            return "launch_marketing_campaign"
-        elif "$50,000" in objective:
-            return "optimize_and_scale"
-        return "evaluate_current_strategy"
+        # Example of how an LLM might output a structured action:
+        # {"tool": "web_search", "tool_input": {"query": "market trends, unmet needs, competitor analysis"}}
+        # {"tool": "content_generator", "tool_input": {"content_type": "marketing_slogan", "prompt": "short marketing slogan for a new SaaS product", "mrr_phase": self.phase}}
+        # {"tool": "agent_action", "tool_input": {"action_name": "move_to_next_objective"}}
 
-    def execute_action(self, action, *args, **kwargs):
-        if action == "perform_market_research":
-            cost = 10.0 # Simulate API cost
-            deduct_response = self.budget_manager.deduct_funds(cost, description="Market Research", mrr=self.mrr)
-            if deduct_response["status"] == "success":
-                results = self.tools["web_search"].search("market trends, unmet needs, competitor analysis")
-                self.log_action("Performed market research", "web_search", cost=cost, outcome=f"Found {len(results)} search results.")
-                if self.current_objective_index == 0:
-                    self.log_action("Market research completed, ready to define MVP.", outcome="Success")
-                    return self.make_decision("move to next phase")
-            else:
-                self.log_action("Attempted market research", tool_used="web_search", cost=cost, outcome=f"Failed: {deduct_response['message']}")
+        if self.budget_manager.mrr >= 50000.0:
+            return {"tool": "agent_action", "tool_input": {"action_name": "mission_accomplished"}}
 
-        elif action == "design_and_build_mvp":
-            cost = 100.0 # Simulate MVP development cost
-            deduct_response = self.budget_manager.deduct_funds(cost, description="MVP Development", mrr=self.mrr)
-            if deduct_response["status"] == "success":
-                self.log_action("Designed and built MVP", cost=cost, outcome="MVP ready for launch.")
-                return self.make_decision("move to next phase")
-            else:
-                self.log_action("Attempted MVP development", cost=cost, outcome=f"Failed: {deduct_response['message']}")
+        current_objective_text = self.objectives[self.current_objective_index]
 
-        elif action == "generate_marketing_content":
-            cost = 5.0 # Simulate content generation cost
-            deduct_response = self.budget_manager.deduct_funds(cost, description="Content Generation", mrr=self.mrr)
-            if deduct_response["status"] == "success":
-                # Placeholder for actual content generation using the content_generator tool's workflow
-                # For now, simulate directly generating without agent LLM interaction for brevity in agent_will.py
-                content_gen_output = self.tools["content_generator"].execute(
-                    content_type="marketing_slogan", 
-                    prompt="short marketing slogan for a new SaaS product", 
-                    mrr_phase=self.phase.split(':')[0].lower().replace(' ', '_') # Extract phase like 'phase 1' -> 'phase_1'
-                )
-                # Assume for simplicity that agent immediately uses the generation_prompt with its LLM
-                # and gets content. Then passes for validation. This is a simplification.
-                generated_content = f"Slogan: {content_gen_output['generation_prompt'][:50]}..."
-                self.log_action("Generated marketing content", "content_generator", cost=cost, outcome=f"Content: {generated_content}")
-            else:
-                self.log_action("Attempted content generation", tool_used="content_generator", cost=cost, outcome=f"Failed: {deduct_response['message']}")
+        if "market niche" in current_objective_text and self.current_objective_index == 0:
+            return {"tool": "agent_action", "tool_input": {"action_name": "perform_market_research"}}
+        elif "MVP" in current_objective_text and self.current_objective_index == 1:
+            return {"tool": "agent_action", "tool_input": {"action_name": "design_and_build_mvp"}}
+        elif "paying customers" in current_objective_text and self.current_objective_index == 2:
+            return {"tool": "agent_action", "tool_input": {"action_name": "launch_marketing_campaign"}}
+        elif "$50,000" in current_objective_text and self.current_objective_index == 3:
+            return {"tool": "agent_action", "tool_input": {"action_name": "optimize_and_scale"}}
+        
+        # Default actions if specific objective not met or needs evaluation
+        if "evaluate current revenue and strategy" in context.lower() or "analyze performance" in context.lower():
+            return {"tool": "agent_action", "tool_input": {"action_name": "analyze_performance"}}
+        
+        # If current objective is not yet met, try to progress it
+        if self.current_objective_index == 0: # Market niche
+            return {"tool": "agent_action", "tool_input": {"action_name": "perform_market_research"}}
+        elif self.current_objective_index == 1: # MVP
+            return {"tool": "agent_action", "tool_input": {"action_name": "design_and_build_mvp"}}
+        elif self.current_objective_index == 2: # First paying customers
+            return {"tool": "agent_action", "tool_input": {"action_name": "launch_marketing_campaign"}}
+        elif self.current_objective_index == 3: # Scale to $50k
+            return {"tool": "agent_action", "tool_input": {"action_name": "optimize_and_scale"}}
 
-        elif action == "analyze_performance":
-            # Simulate getting data from a 'live' MVP or marketing campaign
-            # Adjust dummy data to be more dynamic and reflect MRR
-            # Assuming basic conversion for initial revenues
-            visitor_traffic = 100 + int(self.mrr * 10)
-            conversion_rate_sim = 0.01 + (self.mrr / 50000 * 0.04) # Increases with MRR
-            revenue_sim = self.mrr * 1.1 # Simulate total revenue slightly above MRR
-            churn_rate_sim = 0.20 - (self.mrr / 50000 * 0.17) # Decreases with MRR
-            cac_sim = 50.0 - (self.mrr / 50000 * 40.0) # Decreases with MRR
-            ltv_sim = cac_sim * (1.0 + (self.mrr / 50000 * 3.0)) # Increases with MRR
+        return {"tool": "agent_action", "tool_input": {"action_name": "evaluate_current_strategy"}}
 
-            data = {
-                "mrr": self.mrr, # Use actual MRR
-                "revenue": revenue_sim,
-                "churn_rate": max(0.01, churn_rate_sim),
-                "cac": max(10.0, cac_sim),
-                "ltv": max(50.0, ltv_sim),
-                "conversion_rate": min(0.05, conversion_rate_sim),
-                "visitor_traffic": visitor_traffic
-            }
-            analysis_result = self.tools["data_analyzer"].analyze(data)
-            self.log_action("Analyzed performance data", "data_analyzer", outcome=f"Analysis: {analysis_result['current_phase']} - {analysis_result['recommendations'][0] if analysis_result['recommendations'] else 'No specific recommendation.' }")
+    def execute_action(self, action_dict):
+        action_type = action_dict.get("tool")
+        action_input = action_dict.get("tool_input", {})
 
-            # Update MRR phase of agent based on analysis
-            self.phase = analysis_result['current_phase']
-            # This is where agent would act on recommendations or phase progression
-            if analysis_result['phase_progression'] == 'advance':
-                self.log_action(f"Data analysis suggests to advance phase: {analysis_result['recommendations'][0]}")
-                return self.make_decision("move to next phase")
-            elif "Prioritize A/B testing" in (analysis_result['recommendations'][0] if analysis_result['recommendations'] else '') and self.current_objective_index > 1:
-                return self.execute_action("generate_marketing_content") # Simulate A/B test by generating new content
-            elif "Review customer acquisition" in (analysis_result['recommendations'][0] if analysis_result['recommendations'] else '') and self.current_objective_index > 1:
-                return self.execute_action("launch_marketing_campaign") # Re-launch/adjust campaign
+        if action_type == "agent_action":
+            action = action_input.get("action_name")
 
+            if action == "perform_market_research":
+                cost = 10.0 # Simulate API cost
+                deduct_response = self.budget_manager.deduct_funds(cost, description="Market Research", mrr=self.budget_manager.mrr)
+                if deduct_response["status"] == "success":
+                    results = self.tools["web_search"].search("market trends, unmet needs, competitor analysis")
+                    self.log_action("Performed market research", "web_search", cost=cost, outcome=f"Found {len(results)} search results.")
+                    if self.current_objective_index == 0:
+                        self.log_action("Market research completed, ready to define MVP.", outcome="Success")
+                        return self.execute_action({"tool": "agent_action", "tool_input": {"action_name": "move_to_next_objective"}})
+                    return True
+                else:
+                    self.log_action("Attempted market research", tool_used="web_search", cost=cost, outcome=f"Failed: {deduct_response['message']}")
+                    return self.execute_action({"tool": "agent_action", "tool_input": {"action_name": "evaluate_current_strategy"}})
 
-        elif action == "launch_marketing_campaign":
-            cost = 50.0
-            add_mrr_impact = 100.0 + (self.mrr * 0.1) # Simulate MRR gain from campaign
-            # Ensure mrr passed to deduct_funds is current self.mrr
-            deduct_response = self.budget_manager.deduct_funds(cost, description="Marketing Campaign", mrr=self.mrr)
-            if deduct_response["status"] == "success":
-                self.log_action("Launched marketing campaign", cost=cost)
-                add_response = self.budget_manager.add_funds(add_mrr_impact * 2, description="Revenue from campaign (simulated)", mrr_impact=add_mrr_impact)
-                self.revenue += add_mrr_impact * 2 # Keep for legacy tracking, MRR is primary
-                self.mrr += add_mrr_impact
-                self.log_action("Generated revenue from marketing", revenue_impact=add_mrr_impact*2, outcome=f"New MRR: ${add_mrr_impact:.2f}")
-                return self.make_decision("evaluate current revenue and strategy")
-            else:
-                self.log_action("Attempted marketing campaign", cost=cost, outcome=f"Failed: {deduct_response['message']}")
+            elif action == "design_and_build_mvp":
+                cost = 100.0 # Simulate MVP development cost
+                deduct_response = self.budget_manager.deduct_funds(cost, description="MVP Development", mrr=self.budget_manager.mrr)
+                if deduct_response["status"] == "success":
+                    self.log_action("Designed and built MVP", cost=cost, outcome="MVP ready for launch.")
+                    return self.execute_action({"tool": "agent_action", "tool_input": {"action_name": "move_to_next_objective"}})
+                else:
+                    self.log_action("Attempted MVP development", cost=cost, outcome=f"Failed: {deduct_response['message']}")
+                    return self.execute_action({"tool": "agent_action", "tool_input": {"action_name": "evaluate_current_strategy"}})
 
-        elif action == "optimize_and_scale":
-            cost = 20.0 # Simulate re-investment cost
-            add_mrr_impact = 200.0 + (self.mrr * 0.15) # Simulate larger MRR gain from optimization
-            deduct_response = self.budget_manager.deduct_funds(cost, description="Optimization & Scaling", mrr=self.mrr)
-            if deduct_response["status"] == "success":
-                self.log_action("Optimizing operations for scaling", cost=cost)
-                add_response = self.budget_manager.add_funds(add_mrr_impact * 2, description="Revenue from scaling (simulated)", mrr_impact=add_mrr_impact)
-                self.revenue += add_mrr_impact * 2
-                self.mrr += add_mrr_impact
-                self.log_action("Scaled operations and generated more revenue", revenue_impact=add_mrr_impact*2, outcome=f"MRR increased by ${add_mrr_impact:.2f}")
-                if self.mrr >= 50000.0: return self.make_decision("mission_accomplished")
-                else: return self.make_decision("evaluate current revenue and strategy")
-            else:
-                self.log_action("Attempted optimization and scaling", cost=cost, outcome=f"Failed: {deduct_response['message']}")
+            elif action == "generate_marketing_content":
+                cost = 5.0 # Simulate content generation cost
+                deduct_response = self.budget_manager.deduct_funds(cost, description="Content Generation", mrr=self.budget_manager.mrr)
+                if deduct_response["status"] == "success":
+                    content_gen_output = self.tools["content_generator"].execute(
+                        content_type="marketing_slogan", 
+                        prompt="short marketing slogan for a new SaaS product", 
+                        mrr_phase=self.phase # Pass self.phase directly
+                    )
+                    generated_content = f"Slogan: {content_gen_output['generation_prompt'][:50]}..."
+                    self.log_action("Generated marketing content", "content_generator", cost=cost, outcome=f"Content: {generated_content}")
+                    return True
+                else:
+                    self.log_action("Attempted content generation", tool_used="content_generator", cost=cost, outcome=f"Failed: {deduct_response['message']}")
+                    return self.execute_action({"tool": "agent_action", "tool_input": {"action_name": "evaluate_current_strategy"}})
 
-        elif action == "mission_accomplished":
-            self.log_action("AgentWill has achieved its goal: $50,000 MRR!")
-            return False # Signal to stop execution
+            elif action == "analyze_performance":
+                # Simulate getting data from a 'live' MVP or marketing campaign
+                # Adjust dummy data to be more dynamic and reflect MRR
+                current_mrr = self.budget_manager.mrr
+                budget_status = self.budget_manager.check_budget_status(current_mrr)
+                phase_config = budget_status['phase_config']
 
-        elif action == "evaluate_current_strategy":
-            self.log_action("Evaluating current strategy and progress...")
-            # Trigger detailed performance analysis
-            return self.execute_action("analyze_performance")
+                visitor_traffic = 100 + int(current_mrr * 10)
+                conversion_rate_sim = phase_config['conversion_rate_base'] + (current_mrr / 50000 * phase_config['conversion_rate_growth'])
+                churn_rate_sim = phase_config['churn_rate_base'] - (current_mrr / 50000 * phase_config['churn_rate_reduction'])
+                cac_sim = phase_config['cac_base'] - (current_mrr / 50000 * phase_config['cac_reduction'])
+                ltv_sim = cac_sim * (1.0 + (current_mrr / 50000 * phase_config['ltv_growth_factor']))
+
+                data = {
+                    "mrr": current_mrr,
+                    "revenue": current_mrr * 1.1, # Simulate total revenue slightly above MRR
+                    "churn_rate": max(0.01, churn_rate_sim),
+                    "cac": max(10.0, cac_sim),
+                    "ltv": max(50.0, ltv_sim),
+                    "conversion_rate": min(0.05, conversion_rate_sim),
+                    "visitor_traffic": visitor_traffic
+                }
+                analysis_result = self.tools["data_analyzer"].analyze(data)
+                self.log_action("Analyzed performance data", "data_analyzer", outcome=f"Analysis: {analysis_result['current_phase']} - {analysis_result['recommendations'][0] if analysis_result['recommendations'] else 'No specific recommendation.' }")
+
+                self.phase = analysis_result['current_phase']
+                if analysis_result['phase_progression'] == 'advance':
+                    self.log_action(f"Data analysis suggests to advance phase: {analysis_result['recommendations'][0]}")
+                    return self.execute_action({"tool": "agent_action", "tool_input": {"action_name": "move_to_next_objective"}})
+                elif "Prioritize A/B testing" in (analysis_result['recommendations'][0] if analysis_result['recommendations'] else '') and self.current_objective_index > 1:
+                    return self.execute_action({"tool": "agent_action", "tool_input": {"action_name": "generate_marketing_content"}}) # Simulate A/B test by generating new content
+                elif "Review customer acquisition" in (analysis_result['recommendations'][0] if analysis_result['recommendations'] else '') and self.current_objective_index > 1:
+                    return self.execute_action({"tool": "agent_action", "tool_input": {"action_name": "launch_marketing_campaign"}}) # Re-launch/adjust campaign
+                return True
+
+            elif action == "launch_marketing_campaign":
+                current_mrr = self.budget_manager.mrr
+                budget_status = self.budget_manager.check_budget_status(current_mrr)
+                phase_config = budget_status['phase_config']
+
+                cost = phase_config['campaign_cost']
+                
+                deduct_response = self.budget_manager.deduct_funds(cost, description="Marketing Campaign", mrr=current_mrr)
+                if deduct_response["status"] == "success":
+                    self.log_action("Launched marketing campaign", cost=cost)
+                    
+                    # Simulate MRR gain based on phase configuration
+                    mrr_gain_factor = phase_config['mrr_growth_factor']
+                    campaign_success_prob = phase_config['campaign_success_probability']
+
+                    if random.random() < campaign_success_prob: # Simulate campaign success
+                        add_mrr_impact = current_mrr * mrr_gain_factor + phase_config['base_mrr_gain']
+                        add_response = self.budget_manager.add_funds(add_mrr_impact * 2, description="Revenue from campaign (simulated)", mrr_impact=add_mrr_impact)
+                        self.log_action("Generated revenue from marketing", revenue_impact=add_mrr_impact*2, outcome=f"New MRR: ${add_mrr_impact:.2f}")
+                    else:
+                        add_mrr_impact = phase_config['base_mrr_gain'] * 0.1 # Small gain even if not fully successful
+                        add_response = self.budget_manager.add_funds(add_mrr_impact * 2, description="Revenue from campaign (simulated - partial success)", mrr_impact=add_mrr_impact)
+                        self.log_action("Marketing campaign had limited success", revenue_impact=add_mrr_impact*2, outcome=f"MRR increased by ${add_mrr_impact:.2f}")
+
+                    return self.execute_action({"tool": "agent_action", "tool_input": {"action_name": "evaluate_current_strategy"}})
+                else:
+                    self.log_action("Attempted marketing campaign", cost=cost, outcome=f"Failed: {deduct_response['message']}")
+                    return self.execute_action({"tool": "agent_action", "tool_input": {"action_name": "evaluate_current_strategy"}})
+
+            elif action == "optimize_and_scale":
+                current_mrr = self.budget_manager.mrr
+                budget_status = self.budget_manager.check_budget_status(current_mrr)
+                phase_config = budget_status['phase_config']
+
+                cost = phase_config['optimization_cost']
+                
+                deduct_response = self.budget_manager.deduct_funds(cost, description="Optimization & Scaling", mrr=current_mrr)
+                if deduct_response["status"] == "success":
+                    self.log_action("Optimizing operations for scaling", cost=cost)
+                    
+                    mrr_gain_factor = phase_config['mrr_growth_factor_scale']
+                    add_mrr_impact = current_mrr * mrr_gain_factor + phase_config['base_mrr_gain_scale']
+
+                    add_response = self.budget_manager.add_funds(add_mrr_impact * 2, description="Revenue from scaling (simulated)", mrr_impact=add_mrr_impact)
+                    self.log_action("Scaled operations and generated more revenue", revenue_impact=add_mrr_impact*2, outcome=f"MRR increased by ${add_mrr_impact:.2f}")
+                    if self.budget_manager.mrr >= 50000.0: 
+                        return self.execute_action({"tool": "agent_action", "tool_input": {"action_name": "mission_accomplished"}})
+                    else: 
+                        return self.execute_action({"tool": "agent_action", "tool_input": {"action_name": "evaluate_current_strategy"}})
+                else:
+                    self.log_action("Attempted optimization and scaling", cost=cost, outcome=f"Failed: {deduct_response['message']}")
+                    return self.execute_action({"tool": "agent_action", "tool_input": {"action_name": "evaluate_current_strategy"}})
+
+            elif action == "mission_accomplished":
+                self.log_action("AgentWill has achieved its goal: $50,000 MRR!")
+                return False # Signal to stop execution
+
+            elif action == "evaluate_current_strategy":
+                self.log_action("Evaluating current strategy and progress...")
+                return self.execute_action({"tool": "agent_action", "tool_input": {"action_name": "analyze_performance"}})
+            
+            elif action == "move_to_next_objective":
+                if self.current_objective_index < len(self.objectives) - 1:
+                    self.current_objective_index += 1
+                    self.log_action(f"Moving to next objective: {self.objectives[self.current_objective_index]}")
+                    return True # Continue with the new objective
+                else:
+                    return self.execute_action({"tool": "agent_action", "tool_input": {"action_name": "mission_accomplished"}})
 
         # If no specific action, still return True to continue loop, or False to stop if stuck
         return True
 
     def run(self):
+        import random # Import random for campaign success simulation
         self.log_action("AgentWill starting its autonomous operation.")
         executable = True
-        while executable and self.mrr < 50000.0:
+        while executable and self.budget_manager.mrr < 50000.0:
             current_objective = self.objectives[self.current_objective_index]
             
-            # Fetch latest budget status and update internal MRR if necessary (from budget_manager's loaded state)
-            # For now, agent_will's self.mrr is the source of truth, but would ideally be synced.
-            budget_status_response = self.budget_manager.check_budget_status(self.mrr)
+            budget_status_response = self.budget_manager.check_budget_status(self.budget_manager.mrr)
             self.phase = budget_status_response['current_mrr_phase'] # Keep AgentWill's phase updated
             current_budget = budget_status_response['current_balance']
 
-            context = f"Current objective: {current_objective}. Current MRR: ${self.mrr:.2f}. Budget: ${current_budget:.2f}. Phase: {self.phase}. What action should be taken? " \
+            context = f"Current objective: {current_objective}. Current MRR: ${self.budget_manager.mrr:.2f}. Budget: ${current_budget:.2f}. Phase: {self.phase}. What action should be taken? " \
                        f"Consider if current phase ({self.phase}) is complete or if more actions are needed to fulfill the objective."
             
             action_to_take = self.make_decision(context)
 
-            if action_to_take == "mission_accomplished":
+            if action_to_take.get("tool_input", {}).get("action_name") == "mission_accomplished":
                 executable = False
                 continue
 
-            last_mrr = self.mrr
+            last_mrr = self.budget_manager.mrr
             last_budget = current_budget
             
             executable = self.execute_action(action_to_take)
@@ -240,13 +280,13 @@ class AgentWill:
                 break
 
             # Add a break condition if the agent seems to be stuck without making progress
-            if self.mrr == last_mrr and self.budget_manager.current_budget == last_budget and action_to_take == "evaluate_current_strategy":
+            if self.budget_manager.mrr == last_mrr and self.budget_manager.current_budget == last_budget and action_to_take.get("tool_input", {}).get("action_name") == "evaluate_current_strategy":
                 self.log_action("Agent seems stuck without progress after evaluation and no change in MRR/Budget.", outcome="Halted")
                 executable = False
 
             time.sleep(0.5) # Simulate time passing between actions
 
-        if self.mrr >= 50000.0:
+        if self.budget_manager.mrr >= 50000.0:
             self.log_action("Target MRR achieved! AgentWill operation concluded.")
         else:
             self.log_action("AgentWill stopped before reaching target, possibly due to budget constraints, logic loop, or early termination.")
