@@ -99,6 +99,7 @@ class AgentWill:
         elif self.current_objective_index == 3: # Scale to $50k
             return {"tool": "agent_action", "tool_input": {"action_name": "optimize_and_scale"}}
 
+        context += f' Ethical constraints: {chr(59).join(ETHICAL_GUIDELINES)}'
         return {"tool": "agent_action", "tool_input": {"action_name": "evaluate_current_strategy"}}
 
     def execute_action(self, action_dict):
