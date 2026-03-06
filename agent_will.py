@@ -58,7 +58,7 @@ class AgentWill:
         # using an LLM to choose the best action based on context, objectives, and tool capabilities.
         self.log_action(f"Analyzing context for decision: {context}")
 
-        context += f' Ethical constraints: {"; ".join(ETHICAL_GUIDELINES)}'
+        context += f' Ethical constraints: {\"; \".join(ETHICAL_GUIDELINES)}'
 
         # Update phase based on MRR before making decisions
         budget_status = self.budget_manager.check_budget_status(self.budget_manager.mrr)
@@ -118,8 +118,8 @@ class AgentWill:
                 cost = phase_config['market_research_cost'] # Use phase-specific cost
                 deduct_response = self.budget_manager.deduct_funds(cost, description="Market Research", mrr=self.budget_manager.mrr)
                 if deduct_response["status"] == "success":
-                    results = self.tools["web_search"].search("market trends, unmet needs, competitor analysis")
-                    self.log_action("Performed market research", "web_search", cost=cost, outcome=f"Found {len(results)} search results.")
+                    results = self.tools["web_search"].execute(query="market trends, unmet needs, competitor analysis", search_type='general')
+                    self.log_action("Performed market research", "web_search", cost=cost, outcome=f"Found {results['num_results_returned']} results. Status: {results['status']}")
                     if self.current_objective_index == 0:
                         self.log_action("Market research completed, ready to define MVP.", outcome="Success")
                         self.action_queue.appendleft({"tool": "agent_action", "tool_input": {"action_name": "move_to_next_objective"}})
