@@ -9,6 +9,7 @@ logs/*.log
 # API Keys (if not using environment variables)
 *.env
 .env.*
+!.env.example
 
 # Venv
-venc/
+venv/
