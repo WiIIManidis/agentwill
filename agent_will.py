@@ -58,6 +58,8 @@ class AgentWill:
         # using an LLM to choose the best action based on context, objectives, and tool capabilities.
         self.log_action(f"Analyzing context for decision: {context}")
 
+        context += f' Ethical constraints: {"; ".join(ETHICAL_GUIDELINES)}'
+
         # Update phase based on MRR before making decisions
         budget_status = self.budget_manager.check_budget_status(self.budget_manager.mrr)
         self.phase = budget_status['current_mrr_phase']
@@ -99,7 +101,6 @@ class AgentWill:
         elif self.current_objective_index == 3: # Scale to $50k
             return {"tool": "agent_action", "tool_input": {"action_name": "optimize_and_scale"}}
 
-        context += f' Ethical constraints: {chr(59).join(ETHICAL_GUIDELINES)}'
         return {"tool": "agent_action", "tool_input": {"action_name": "evaluate_current_strategy"}}
 
     def execute_action(self, action_dict):
