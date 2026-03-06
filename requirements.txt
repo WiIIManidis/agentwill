@@ -1,0 +1,4 @@
+tenacity
+requests
+python-dotenv
+openai
