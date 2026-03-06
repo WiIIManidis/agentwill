@@ -142,3 +142,4 @@ class DataAnalyzerTool:
         logging.info(f"{{\"message\": \"Analysis complete.\", \"result\": {analysis_result}}}")
         return analysis_result
 
+
