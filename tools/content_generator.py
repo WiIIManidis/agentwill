@@ -139,9 +139,6 @@ class ContentGeneratorTool:
         # this execute method's role becomes preparing the prompt for the *agent* to use with its LLM,
         # and then processing the LLM's response (which is passed back into a subsequent tool call or state).
         
-        # For this re-write, we assume the 'generated_content' comes from a prior LLM turn of the agent
-        # that used a generation prompt. Thus, this tool's primary role shifts to validation.
-        
         # To align with OpenClaw's model, the `execute` method should primarily return a prompt
         # if it needs further LLM interaction, or the final result if it's a pure deterministic tool.
         
@@ -249,3 +246,4 @@ if __name__ == '__main__':
     )
     print("\n--- Final Result from Tool ---")
     print(json.dumps(final_result, indent=2))
+
