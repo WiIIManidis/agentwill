@@ -3,7 +3,7 @@
 AgentWill is an AI agent designed to autonomously build and scale a business from inception to $50,000/month in recurring revenue, leveraging the OpenClaw framework.
 
 ## Vision
-To demonstrate fully autonomous AI-driven business creation and scaling.
+To demonstrate fully autonomous AI driven business creation and scaling.
 
 ## Current Status
 **Phase 0: Initialization & Setup** - *Completed*
