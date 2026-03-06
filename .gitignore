@@ -11,5 +11,4 @@ logs/*.log
 .env.*
 
 # Venv
-venv/
-
+venc/
