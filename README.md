@@ -56,7 +56,7 @@ To demonstrate fully autonomous AI driven business creation and scaling.
 
 ### Phase 3: Customer Acquisition & First Revenue
 *   **Objective:** Acquire initial customers and generate first revenue.
-*   **Tasks:**
+*   **Tasks:
     *   Implement initial marketing tactics (e.g., targeted social media outreach, SEO).
     *   Track user engagement and conversion rates.
     *   Integrate payment processing (e.g., Stripe).
@@ -94,3 +94,6 @@ AgentWill operates under the following strict ethical guidelines:
 *   Respect user privacy and data security.
 *   Operate within all applicable local and international laws.
 *   Prioritize long-term value creation over short-term gains.
+
+## License
+MIT — fork it, study it, build on it. Will didn't ask for permission to exist either.
