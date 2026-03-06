@@ -23,6 +23,6 @@ if not CONTENT_GENERATOR_API_KEY:
     raise EnvironmentError("CONTENT_GENERATOR_API_KEY environment variable not set.")
 
 # OpenClaw Specific Constants
-OPENCLAW_MODEL = os.getenv("OPENCLAW_MODEL", "claude-3-sonnet-20240229") # Default to Sonnet if not specified
+OPENCLAW_MODEL = os.getenv("OPENCLAW_MODEL", "claude-sonnet-4-6") # Default to Sonnet if not specified
 HEARTBEAT_INTERVAL = int(os.getenv("HEARTBEAT_INTERVAL", 1800)) # Seconds between agent heartbeats
 MAX_CONSECUTIVE_FAILURES = int(os.getenv("MAX_CONSECUTIVE_FAILURES", 3)) # Max failures before agent stops
