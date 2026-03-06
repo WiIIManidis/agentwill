@@ -14,3 +14,4 @@ ETHICAL_GUIDELINES = [
 # Tool Configurations (placeholders)
 WEB_SEARCH_API_KEY = "your_web_search_api_key" # Replace with actual API key if using real tools
 CONTENT_GENERATOR_API_KEY = "your_content_generator_api_key" # Replace with actual API key if using real tools
+
