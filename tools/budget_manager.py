@@ -36,22 +36,23 @@ class BudgetManager:
 
     def load_state(self, initial_budget):
         last_balance = initial_budget  # Start with the initial budget passed in
+        self.mrr = 0.0 # Reset MRR for re-calculation during state load
+        restore_logged = False
+
         if os.path.exists(LOG_FILE):
             with open(LOG_FILE, 'r') as f:
                 for line in f:
                     try:
                         transaction = json.loads(line)
                         if transaction['type'] == 'restore':
-                            # 'Restore' entries are for traceability of initial budget setting, not accumulated.
-                            # only use the latest restore if the file is truly empty otherwise skip as we have the initial_budget
-                            if not [t for t in self.transactions if t['type'] != 'restore']:
-                                last_balance = float(transaction['amount'])
-                            continue # Skip restore entries from affecting current_budget calculation during replay
+                            # 'Restore' entries are for traceability only. No financial impact during replay
+                            restore_logged = True
+                            continue 
                         elif transaction['type'] == 'expense':
                             last_balance -= float(transaction['amount'])
                         elif transaction['type'] == 'revenue':
                             last_balance += float(transaction['amount'])
-                            # Update MRR if there's a specific MRR attribute in the transaction
+                            # Reconstruct MRR by summing all mrr_impact from revenue transactions
                             if 'mrr_impact' in transaction:
                                 self.mrr += float(transaction['mrr_impact'])
 
@@ -59,8 +60,8 @@ class BudgetManager:
                     except json.JSONDecodeError:
                         continue # Skip malformed lines
         self.current_budget = last_balance
-        # Log initial restore for traceability if it hasn't been logged yet in this session
-        if not any(t['type'] == 'restore' for t in self.transactions):
+        # Log initial restore for traceability if it hasn't been logged yet
+        if not restore_logged:
             self._log_transaction({"type": "restore", "amount": initial_budget, "timestamp": datetime.now().isoformat(), "description": "Budget restored/initialized on startup"})
 
 
@@ -245,36 +246,26 @@ if __name__ == '__main__':
     print("Simulating restart...")
     del bm
     bm2 = BudgetManager(initial_budget=100.0) # Initial budget passed again on restart
-    print(f"Status after restart (MRR should reload from logs): {bm2.check_budget_status(mrr=1050.0)}")
+    print(f"Status after restart (MRR should reload from logs): {bm2.check_budget_status(mrr=bm2.mrr)}") # Pass mrr from reloaded state
     # Verify current budget is correctly restored from logs
     exp_budget_after_restart = (100.0 + 50.0 + 1000.0) - (20.0 + 1200.0) # initial + revenue - expenses
     print(f"Expected budget after restart: {exp_budget_after_restart:.2f}")
-    assert abs(bm2.check_budget_status(mrr=1050.0)['current_balance'] - exp_budget_after_restart) < 0.01
+    assert abs(bm2.check_budget_status(mrr=bm2.mrr)['current_balance'] - exp_budget_after_restart) < 0.01
 
     print("\n--- Test 5: Reaching Expansion Phase and large spend ---")
     print(f"Adding funds to reach expansion phase MRR: {bm2.add_funds(30000.0, 'Major Funding Round', mrr_impact=20000.0)}") # MRR now 21050
-    print(f"Current status (MRR 21050): {bm2.check_budget_status(mrr=21050.0)}")
+    print(f"Current status (MRR 21050): {bm2.check_budget_status(mrr=bm2.mrr)}")
     # Expansion phase ceiling is $100000.0
-    print(f"Deducting $15000.00 (expansion phase): {bm2.deduct_funds(15000.00, 'New Market Entry', mrr=21050.0)}")
-    print(f"Current status: {bm2.check_budget_status(mrr=21050.0)}")
+    print(f"Deducting $15000.00 (expansion phase): {bm2.deduct_funds(15000.00, 'New Market Entry', mrr=bm2.mrr)}")
+    print(f"Current status: {bm2.check_budget_status(mrr=bm2.mrr)}")
 
     print("\n--- Test 6: MRR Impact on restore ---")
     # Ensuring MRR is consistent across restarts
     del bm2
     bm3 = BudgetManager(initial_budget=100.0) # Initial budget passed again on restart
-    initial_mrr_from_logs = 0.0
-    if os.path.exists(LOG_FILE):
-        with open(LOG_FILE, 'r') as f:
-            for line in f:
-                try:
-                    transaction = json.loads(line)
-                    if transaction.get('type') == 'revenue' and 'mrr_impact' in transaction:
-                        initial_mrr_from_logs += float(transaction['mrr_impact'])
-                except json.JSONDecodeError:
-                    continue
-    bm3.mrr = initial_mrr_from_logs # Set the MRR based on replaying revenue transactions
-    print(f"Status after restart (MRR should be {initial_mrr_from_logs}): {bm3.check_budget_status(mrr=initial_mrr_from_logs)}")
-    assert abs(bm3.mrr - initial_mrr_from_logs) < 0.01
+    # MRR should now be correctly loaded internally by BudgetManager
+    print(f"Status after restart (MRR should be {bm3.mrr}): {bm3.check_budget_status(mrr=bm3.mrr)}")
+    expected_mrr_after_all_adds = 50.0 + 1000.0 + 20000.0
+    assert abs(bm3.mrr - expected_mrr_after_all_adds) < 0.01
 
     print("All budget manager tests passed!")
-
