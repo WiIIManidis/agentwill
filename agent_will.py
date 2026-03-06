@@ -295,7 +295,10 @@ class AgentWill:
                 break
 
             # Stuck detection: if MRR hasn't changed for the last 5 iterations
-            if len(self.mrr_history) == self.mrr_history.maxlen and all(mrr == self.mrr_history[0] for mrr in self.mrr_history):
+            # Only activate stuck detection once the agent is past the initial pre-revenue objectives
+            if self.current_objective_index >= 2 and \
+               len(self.mrr_history) == self.mrr_history.maxlen and \
+               all(mrr == self.mrr_history[0] for mrr in self.mrr_history):
                 self.log_action("Agent seems stuck: MRR has not changed for 5 consecutive actions.", outcome="Halted")
                 executable = False
 
