@@ -14,10 +14,15 @@ ETHICAL_GUIDELINES = [
 ]
 
 # Tool Configurations
-WEB_SEARCH_API_KEY = os.getenv("WEB_SEARCH_API_KEY", "your_web_search_api_key")
-CONTENT_GENERATOR_API_KEY = os.getenv("CONTENT_GENERATOR_API_KEY", "your_content_generator_api_key")
+WEB_SEARCH_API_KEY = os.getenv("WEB_SEARCH_API_KEY")
+if not WEB_SEARCH_API_KEY:
+    raise EnvironmentError("WEB_SEARCH_API_KEY environment variable not set.")
+
+CONTENT_GENERATOR_API_KEY = os.getenv("CONTENT_GENERATOR_API_KEY")
+if not CONTENT_GENERATOR_API_KEY:
+    raise EnvironmentError("CONTENT_GENERATOR_API_KEY environment variable not set.")
 
 # OpenClaw Specific Constants
-OPENCLAW_MODEL = os.getenv("OPENCLAW_MODEL", "claude-3-opus-20240229") # Default to Opus if not specified
-HEARTBEAT_INTERVAL = 60 # Seconds between agent heartbeats
-MAX_CONSECUTIVE_FAILURES = 5 # Max failures before agent stops
+OPENCLAW_MODEL = os.getenv("OPENCLAW_MODEL", "claude-3-sonnet-20240229") # Default to Sonnet if not specified
+HEARTBEAT_INTERVAL = int(os.getenv("HEARTBEAT_INTERVAL", 1800)) # Seconds between agent heartbeats
+MAX_CONSECUTIVE_FAILURES = int(os.getenv("MAX_CONSECUTIVE_FAILURES", 3)) # Max failures before agent stops
