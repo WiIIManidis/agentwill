@@ -29,10 +29,12 @@ To demonstrate fully autonomous AI driven business creation and scaling.
 *   **Tasks:
     *   Perform comprehensive market trend analysis (web search).
     *   Identify unmet needs and potential pain points.
+    *   Scan Reddit, Twitter/X, HackerNews, and ProductHunt for real human pain points.
     *   Analyze competitor landscape and value propositions.
     *   Propose 3-5 potential business ideas.
+    *   Score and rank ideas by willingness to pay, competition level, and time to first revenue.
 *   **Success Metrics:** 3-5 validated niche ideas, competitor analysis reports.
-*   **Completion Criteria:** Agent selects a primary niche and validates its potential with data.
+*   **Completion Criteria:** Agent selects a primary niche and validates its potential with data from both web and social sources.
 
 ### Phase 2: MVP Development & Initial Offering
 *   **Objective:** Create a Minimum Viable Product (MVP) and initial offering.
