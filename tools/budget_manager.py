@@ -139,6 +139,27 @@ class BudgetManager:
             "cac_base": 25.0,
             "cac_reduction": 10.0,
             "ltv_growth_factor": 1.0
+        },
+        "Exit Prep": {
+            "market_research_cost": 500.0, # Due diligence
+            "mvp_development_cost": 0.0, # Focus shifts from development
+            "content_generation_cost": 200.0, # Investor documents
+            "campaign_cost": 1000.0, # Legal and broker fees
+            "optimization_cost": 300.0, # Financial and operational optimization
+            "base_mrr_gain": 1000.0, # Continued growth to maximize valuation
+            "base_mrr_gain_scale": 2000.0,
+            "mrr_growth_factor": 0.25,
+            "mrr_growth_factor_scale": 0.1,
+            "campaign_success_probability": 0.9, # High confidence in exit strategy
+            "visitor_traffic_base": 10000,
+            "visitor_traffic_mrr_factor": 0.5,
+            "conversion_rate_base": 0.03,
+            "conversion_rate_growth": 0.004,
+            "churn_rate_base": 0.04,
+            "churn_rate_reduction": 0.04,
+            "cac_base": 20.0,
+            "cac_reduction": 12.0,
+            "ltv_growth_factor": 1.2
         }
     }
 
