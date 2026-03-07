@@ -77,7 +77,7 @@ class AgentWill:
         # using an LLM to choose the best action based on context, objectives, and tool capabilities.
         self.log_action(f"Analyzing context for decision: {context}")
 
-        context += f' Ethical constraints: {\"; \".join(ETHICAL_GUIDELINES)}'
+        context += f' Ethical constraints: {"; ".join(ETHICAL_GUIDELINES)}'
 
         # Update phase based on MRR before making decisions
         budget_status = self.budget_manager.check_budget_status(self.budget_manager.mrr, exit_prep_triggered=self.state.get('exit_prep_triggered', False))
@@ -139,7 +139,7 @@ class AgentWill:
                 if deduct_response["status"] == "success":
                     results = self.tools["web_search"].execute(query="market trends, unmet needs, competitor analysis", search_type='general')
                     social_results = self.tools['social_research'].execute(query='market trends, unmet needs, competitor analysis', platform='all')
-                    self.log_action("Performed market research", "web_search", cost=cost, outcome=f"Found {results['num_results_returned']} web results and {social_results['num_results_returned']} social results. Status: {results['status']}")
+                    self.log_action("Performed market research", "web_search", cost=cost, outcome=f"Found {results['num_results_returned']} web results and {social_results.get('total_results', social_results.get('num_results_returned', 0))} social results. Status: {results['status']}")
                     if self.current_objective_index == 0:
                         self.log_action("Market research completed, ready to define MVP.", outcome="Success")
                         self.action_queue.appendleft({"tool": "agent_action", "tool_input": {"action_name": "move_to_next_objective"}})
