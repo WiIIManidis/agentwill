@@ -13,6 +13,8 @@ from tools.budget_manager import BudgetManager
 # Ensure logs directory exists
 os.makedirs(os.path.dirname(LOG_FILE), exist_ok=True)
 
+STATE_FILE = 'state.json'
+
 class AgentWill:
     def __init__(self):
         self.name = AGENT_NAME
@@ -23,17 +25,32 @@ class AgentWill:
             "data_analyzer": DataAnalyzerTool(),
             "budget_manager": self.budget_manager # Add budget_manager instance to tools
         }
-        self.phase = "Initialization"
+        self.state = self.load_state() # Load state at initialization
+        self.phase = self.state.get('phase', "Initialization")
         self.objectives = [
             "Identify a viable market niche",
             "Develop an MVP",
             "Acquire first paying customers",
             "Scale revenue to $50,000/month"
         ]
-        self.current_objective_index = 0
-        self.action_queue = deque() # Initialize action queue
-        self.mrr_history = deque(maxlen=5) # For stuck detection
+        self.current_objective_index = self.state.get('current_objective_index', 0)
+        self.action_queue = deque(self.state.get('action_queue', [])) # Initialize action queue from state
+        self.mrr_history = deque(self.state.get('mrr_history', []), maxlen=5) # For stuck detection
         self.log_action(f"Agent {self.name} initialized with budget ${self.budget_manager.current_budget:.2f}")
+
+    def load_state(self):
+        if os.path.exists(STATE_FILE):
+            with open(STATE_FILE, 'r') as f:
+                return json.load(f)
+        return {'phase': "Initialization", 'current_objective_index': 0, 'action_queue': [], 'mrr_history': [], 'exit_prep_triggered': False}
+
+    def save_state(self):
+        self.state['phase'] = self.phase
+        self.state['current_objective_index'] = self.current_objective_index
+        self.state['action_queue'] = list(self.action_queue)
+        self.state['mrr_history'] = list(self.mrr_history)
+        with open(STATE_FILE, 'w') as f:
+            json.dump(self.state, f, indent=4)
 
     def log_action(self, action_description, tool_used=None, cost=0.0, revenue_impact=0.0, outcome="Success"):
         timestamp = datetime.now().isoformat()
@@ -58,10 +75,10 @@ class AgentWill:
         # using an LLM to choose the best action based on context, objectives, and tool capabilities.
         self.log_action(f"Analyzing context for decision: {context}")
 
-        context += f' Ethical constraints: {\"; \".join(ETHICAL_GUIDELINES)}'
+        context += f' Ethical constraints: {"; ".join(ETHICAL_GUIDELINES)}'
 
         # Update phase based on MRR before making decisions
-        budget_status = self.budget_manager.check_budget_status(self.budget_manager.mrr)
+        budget_status = self.budget_manager.check_budget_status(self.budget_manager.mrr, exit_prep_triggered=self.state.get('exit_prep_triggered', False))
         self.phase = budget_status['current_mrr_phase']
 
         # Simulate LLM-driven ReAct reasoning
@@ -111,7 +128,7 @@ class AgentWill:
             action = action_input.get("action_name")
 
             # Get current phase configuration
-            budget_status = self.budget_manager.check_budget_status(self.budget_manager.mrr)
+            budget_status = self.budget_manager.check_budget_status(self.budget_manager.mrr, exit_prep_triggered=self.state.get('exit_prep_triggered', False))
             phase_config = budget_status['phase_config']
 
             if action == "perform_market_research":
@@ -272,7 +289,7 @@ class AgentWill:
                 # If queue is empty, make a new decision
                 current_objective = self.objectives[self.current_objective_index]
                 
-                budget_status_response = self.budget_manager.check_budget_status(self.budget_manager.mrr)
+                budget_status_response = self.budget_manager.check_budget_status(self.budget_manager.mrr, exit_prep_triggered=self.state.get('exit_prep_triggered', False))
                 self.phase = budget_status_response['current_mrr_phase'] # Keep AgentWill's phase updated
                 current_budget = budget_status_response['current_balance']
 
@@ -292,6 +309,7 @@ class AgentWill:
             self.mrr_history.append(self.budget_manager.mrr)
             
             executable = self.execute_action(action_to_execute)
+            self.save_state() # Save state after every action
 
             if not executable: # If execute_action explicitly returned False (e.g., mission accomplished)
                 break
