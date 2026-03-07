@@ -79,6 +79,7 @@ To demonstrate fully autonomous AI driven business creation and scaling.
 
 ## OpenClaw Agent Components
 *   `agent_will.py`: Core agent logic, decision-making, task orchestration.
+*   `state.json`: Runtime persistence — Will's current phase, MRR, objectives, and business state survive Mac Mini restarts here.
 *   `tools/`: Directory for integrated tools.
     *   `tools/web_search.py`: Tool for performing web searches.
     *   `tools/content_generator.py`: Tool for generating various forms of content.
