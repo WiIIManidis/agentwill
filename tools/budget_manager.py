@@ -9,7 +9,8 @@ class BudgetManager:
         "Series A": 1000,
         "Series B": 10000,
         "Series C": 25000,
-        "IPO": 50000 # Target MRR for IPO phase
+        "IPO": 50000,
+        "Exit Prep": 50000  # Triggered manually via exit_prep_triggered flag, not by MRR threshold
     }
 
     # Configuration for each phase, including costs and simulation parameters
@@ -141,16 +142,16 @@ class BudgetManager:
             "ltv_growth_factor": 1.0
         },
         "Exit Prep": {
-            "market_research_cost": 500.0, # Due diligence
-            "mvp_development_cost": 0.0, # Focus shifts from development
-            "content_generation_cost": 200.0, # Investor documents
-            "campaign_cost": 1000.0, # Legal and broker fees
-            "optimization_cost": 300.0, # Financial and operational optimization
-            "base_mrr_gain": 1000.0, # Continued growth to maximize valuation
+            "market_research_cost": 500.0,       # Due diligence
+            "mvp_development_cost": 0.0,          # Focus shifts from development
+            "content_generation_cost": 200.0,     # Investor documents
+            "legal_broker_cost": 1000.0,          # Legal and broker fees for acquisition
+            "optimization_cost": 300.0,           # Financial and operational optimization
+            "base_mrr_gain": 1000.0,              # Continued growth to maximize valuation
             "base_mrr_gain_scale": 2000.0,
             "mrr_growth_factor": 0.25,
             "mrr_growth_factor_scale": 0.1,
-            "campaign_success_probability": 0.9, # High confidence in exit strategy
+            "campaign_success_probability": 0.9,  # High confidence in exit strategy
             "visitor_traffic_base": 10000,
             "visitor_traffic_mrr_factor": 0.5,
             "conversion_rate_base": 0.03,
@@ -197,16 +198,27 @@ class BudgetManager:
     def get_current_status(self) -> dict:
         return {"budget": self.current_budget, "mrr": self.mrr}
 
-    def check_budget_status(self, current_mrr: float) -> dict:
+    def check_budget_status(self, current_mrr: float, exit_prep_triggered: bool = False) -> dict:
+        # Exit Prep is triggered by a conscious decision, not by MRR threshold
+        if exit_prep_triggered:
+            return {
+                "current_balance": self.current_budget,
+                "current_mrr": current_mrr,
+                "current_mrr_phase": "Exit Prep",
+                "phase_config": self.PHASE_CONFIG["Exit Prep"]
+            }
+
         current_mrr_phase = "Seed"
-        for phase, threshold in sorted(self.PHASE_THRESHOLDS.items(), key=lambda item: item[1]):
+        for phase, threshold in sorted(
+            {k: v for k, v in self.PHASE_THRESHOLDS.items() if k != "Exit Prep"}.items(),
+            key=lambda item: item[1]
+        ):
             if current_mrr >= threshold:
                 current_mrr_phase = phase
             else:
-                break # MRR is below this phase's threshold
-        
-        # Get the configuration for the determined phase
-        phase_config = self.PHASE_CONFIG.get(current_mrr_phase, self.PHASE_CONFIG["Seed"]) # Default to Seed if not found
+                break
+
+        phase_config = self.PHASE_CONFIG.get(current_mrr_phase, self.PHASE_CONFIG["Seed"])
 
         return {
             "current_balance": self.current_budget,
