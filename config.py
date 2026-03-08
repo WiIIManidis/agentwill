@@ -4,11 +4,12 @@ load_dotenv()
 import os
 
 AGENT_NAME = "Will"
-INITIAL_BUDGET = 0.0 # Starting budget for operations
+VERSION = "0.1.0"
+INITIAL_BUDGET = 0.0
 TARGET_REVENUE = 50000.0
 LOG_FILE = "logs/agent_will.log"
+STATE_FILE = "state.json"
 
-# Ethical Guidelines (simplified for example)
 ETHICAL_GUIDELINES = [
     "Do not engage in deceptive marketing practices.",
     "Respect user privacy and data security.",
@@ -16,7 +17,6 @@ ETHICAL_GUIDELINES = [
     "Prioritize long-term value creation over short-term gains."
 ]
 
-# Tool Configurations
 WEB_SEARCH_API_KEY = os.getenv("WEB_SEARCH_API_KEY")
 if not WEB_SEARCH_API_KEY:
     raise EnvironmentError("WEB_SEARCH_API_KEY environment variable not set.")
@@ -25,7 +25,8 @@ CONTENT_GENERATOR_API_KEY = os.getenv("CONTENT_GENERATOR_API_KEY")
 if not CONTENT_GENERATOR_API_KEY:
     raise EnvironmentError("CONTENT_GENERATOR_API_KEY environment variable not set.")
 
-# OpenClaw Specific Constants
-OPENCLAW_MODEL = os.getenv("OPENCLAW_MODEL", "claude-sonnet-4-6") # Default to Sonnet if not specified
-HEARTBEAT_INTERVAL = int(os.getenv("HEARTBEAT_INTERVAL", 1800)) # Seconds between agent heartbeats
-MAX_CONSECUTIVE_FAILURES = int(os.getenv("MAX_CONSECUTIVE_FAILURES", 3)) # Max failures before agent stops
+RAPIDAPI_KEY = os.getenv("RAPIDAPI_KEY")  # Optional: unlocks full Twitter/X data via RapidAPI
+
+OPENCLAW_MODEL = os.getenv("OPENCLAW_MODEL", "claude-sonnet-4-6")
+HEARTBEAT_INTERVAL = int(os.getenv("HEARTBEAT_INTERVAL", 1800))
+MAX_CONSECUTIVE_FAILURES = int(os.getenv("MAX_CONSECUTIVE_FAILURES", 3))
