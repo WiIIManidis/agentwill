@@ -1,38 +1,23 @@
 {
-  "agent": {
-    "name": "Will",
-    "version": "1.0.0",
-    "started_at": "2026-03-06T09:41:02.441Z",
-    "last_heartbeat": "2026-03-06T09:41:02.441Z"
-  },
-  "financials": {
-    "mrr": 0.00,
-    "budget": 0.00,
-    "total_revenue_earned": 0.00,
-    "total_spent": 0.00
-  },
-  "phase": {
-    "current": "discovery_0_100",
-    "previous": null,
-    "transitioned_at": null
-  },
-  "objectives": {
-    "current_index": 0,
-    "consecutive_failures": 0,
-    "actions_taken": 0
-  },
-  "business": {
+    "phase": "Initialization",
+    "current_objective_index": 0,
+    "action_queue": [],
+    "mrr_history": [],
+    "exit_prep_triggered": false,
     "selected_niche": null,
-    "mvp_live": false,
-    "stripe_connected": false,
-    "first_customer": false
-  },
-  "milestones": {
-    "first_dollar": null,
-    "mrr_100": null,
-    "mrr_1k": null,
-    "mrr_5k": null,
-    "mrr_20k": null,
-    "mrr_50k": null
-  }
+    "last_research": {},
+    "business_listed": null,
+    "business_sold": null,
+    "exit_multiple": null,
+    "sale_price": null,
+    "milestones": {
+        "first_dollar": null,
+        "mrr_100": null,
+        "mrr_1k": null,
+        "mrr_5k": null,
+        "mrr_20k": null,
+        "mrr_50k": null,
+        "business_listed": null,
+        "business_sold": null
+    }
 }
