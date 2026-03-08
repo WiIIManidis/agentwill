@@ -4,7 +4,7 @@ import os
 import random # Moved to top
 from datetime import datetime
 from collections import deque # Import deque for action queue
-from config import AGENT_NAME, INITIAL_BUDGET, ETHICAL_GUIDELINES, LOG_FILE
+from config import AGENT_NAME, INITIAL_BUDGET, ETHICAL_GUIDELINES, LOG_FILE, STATE_FILE, TARGET_REVENUE
 from tools.web_search import WebSearchTool
 from tools.content_generator import ContentGeneratorTool
 from tools.data_analyzer import DataAnalyzerTool
@@ -14,7 +14,6 @@ from tools.social_research import SocialResearchTool
 # Ensure logs directory exists
 os.makedirs(os.path.dirname(LOG_FILE), exist_ok=True)
 
-STATE_FILE = 'state.json'
 
 class AgentWill:
     def __init__(self):
@@ -77,7 +76,7 @@ class AgentWill:
         # using an LLM to choose the best action based on context, objectives, and tool capabilities.
         self.log_action(f"Analyzing context for decision: {context}")
 
-        context += f' Ethical constraints: {"; ".join(ETHICAL_GUIDELINES)}'
+        context += f' Ethical constraints: {\"; \".join(ETHICAL_GUIDELINES)}'
 
         # Update phase based on MRR before making decisions
         budget_status = self.budget_manager.check_budget_status(self.budget_manager.mrr, exit_prep_triggered=self.state.get('exit_prep_triggered', False))
@@ -92,7 +91,7 @@ class AgentWill:
         # {"tool": "content_generator", "tool_input": {"content_type": "marketing_slogan", "prompt": "short marketing slogan for a new SaaS product", "mrr_phase": self.phase}}
         # {"tool": "agent_action", "tool_input": {"action_name": "move_to_next_objective"}}
 
-        if self.budget_manager.mrr >= 50000.0:
+        if self.budget_manager.mrr >= TARGET_REVENUE:
             return {"tool": "agent_action", "tool_input": {"action_name": "mission_accomplished"}}
 
         current_objective_text = self.objectives[self.current_objective_index]
@@ -183,10 +182,10 @@ class AgentWill:
                 current_mrr = self.budget_manager.mrr
                 
                 visitor_traffic = phase_config['visitor_traffic_base'] + int(current_mrr * phase_config['visitor_traffic_mrr_factor'])
-                conversion_rate_sim = phase_config['conversion_rate_base'] + (current_mrr / 50000 * phase_config['conversion_rate_growth'])
-                churn_rate_sim = phase_config['churn_rate_base'] - (current_mrr / 50000 * phase_config['churn_rate_reduction'])
-                cac_sim = phase_config['cac_base'] - (current_mrr / 50000 * phase_config['cac_reduction'])
-                ltv_sim = cac_sim * (1.0 + (current_mrr / 50000 * phase_config['ltv_growth_factor']))
+                conversion_rate_sim = phase_config['conversion_rate_base'] + (current_mrr / TARGET_REVENUE * phase_config['conversion_rate_growth'])
+                churn_rate_sim = phase_config['churn_rate_base'] - (current_mrr / TARGET_REVENUE * phase_config['churn_rate_reduction'])
+                cac_sim = phase_config['cac_base'] - (current_mrr / TARGET_REVENUE * phase_config['cac_reduction'])
+                ltv_sim = cac_sim * (1.0 + (current_mrr / TARGET_REVENUE * phase_config['ltv_growth_factor']))
 
                 data = {
                     "mrr": current_mrr,
@@ -253,7 +252,7 @@ class AgentWill:
 
                     add_response = self.budget_manager.add_funds(add_mrr_impact * 2, description="Revenue from scaling (simulated)", mrr_impact=add_mrr_impact)
                     self.log_action("Scaled operations and generated more revenue", revenue_impact=add_mrr_impact*2, outcome=f"MRR increased by ${add_mrr_impact:.2f}")
-                    if self.budget_manager.mrr >= 50000.0: 
+                    if self.budget_manager.mrr >= TARGET_REVENUE: 
                         self.action_queue.appendleft({"tool": "agent_action", "tool_input": {"action_name": "mission_accomplished"}})
                     else: 
                         self.action_queue.appendleft({"tool": "agent_action", "tool_input": {"action_name": "evaluate_current_strategy"}})
@@ -264,7 +263,7 @@ class AgentWill:
                     return True
 
             elif action == "mission_accomplished":
-                self.log_action("AgentWill has achieved its goal: $50,000 MRR!")
+                self.log_action(f"AgentWill has achieved its goal: ${TARGET_REVENUE:.2f} MRR!")
                 return False # Signal to stop execution
 
             elif action == "evaluate_current_strategy":
@@ -287,7 +286,7 @@ class AgentWill:
     def run(self):
         self.log_action("AgentWill starting its autonomous operation.")
         executable = True
-        while executable and self.budget_manager.mrr < 50000.0:
+        while executable and self.budget_manager.mrr < TARGET_REVENUE:
             if not self.action_queue:
                 # If queue is empty, make a new decision
                 current_objective = self.objectives[self.current_objective_index]
@@ -327,7 +326,7 @@ class AgentWill:
 
             time.sleep(0.5) # Simulate time passing between actions
 
-        if self.budget_manager.mrr >= 50000.0:
+        if self.budget_manager.mrr >= TARGET_REVENUE:
             self.log_action("Target MRR achieved! AgentWill operation concluded.")
         else:
             self.log_action("AgentWill stopped before reaching target, possibly due to budget constraints, logic loop, or early termination.")
