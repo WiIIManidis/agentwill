@@ -6,10 +6,16 @@ __pycache__/
 # Logs
 logs/*.log
 
-# API Keys (if not using environment variables)
-*.env
+# Runtime state (live data, not for version control)
+state.json
+
+# API Keys
+.env
 .env.*
 !.env.example
 
 # Venv
 venv/
+
+# GitHub Actions cache
+.github/workflows/__pycache__/
