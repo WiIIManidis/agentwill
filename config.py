@@ -17,6 +17,7 @@ ETHICAL_GUIDELINES = [
     "Prioritize long-term value creation over short-term gains."
 ]
 
+# Required API keys
 WEB_SEARCH_API_KEY = os.getenv("WEB_SEARCH_API_KEY")
 if not WEB_SEARCH_API_KEY:
     raise EnvironmentError("WEB_SEARCH_API_KEY environment variable not set.")
@@ -25,8 +26,14 @@ CONTENT_GENERATOR_API_KEY = os.getenv("CONTENT_GENERATOR_API_KEY")
 if not CONTENT_GENERATOR_API_KEY:
     raise EnvironmentError("CONTENT_GENERATOR_API_KEY environment variable not set.")
 
+ANTHROPIC_API_KEY = os.getenv("ANTHROPIC_API_KEY")
+if not ANTHROPIC_API_KEY:
+    raise EnvironmentError("ANTHROPIC_API_KEY environment variable not set.")
+
+# Optional API keys
 RAPIDAPI_KEY = os.getenv("RAPIDAPI_KEY")  # Optional: unlocks full Twitter/X data via RapidAPI
 
+# OpenClaw Specific Constants
 OPENCLAW_MODEL = os.getenv("OPENCLAW_MODEL", "claude-sonnet-4-6")
 HEARTBEAT_INTERVAL = int(os.getenv("HEARTBEAT_INTERVAL", 1800))
 MAX_CONSECUTIVE_FAILURES = int(os.getenv("MAX_CONSECUTIVE_FAILURES", 3))
