@@ -1,8 +1,8 @@
 tenacity
 requests
 python-dotenv
-openai
 anthropic
 stripe
 flask
 pyflakes
+rich
