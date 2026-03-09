@@ -114,7 +114,7 @@ Current State:
 {research_summary}
 Available agent actions:
 - perform_market_research: Search web and social platforms for market trends and pain points
-- select_niche: Commit to a specific business niche based on research findings ÃÂÃÂ¢ÃÂÃÂÃÂÃÂ use this after perform_market_research
+- select_niche: Commit to a specific business niche based on research findings -- use this after perform_market_research
 - design_and_build_mvp: Design and build the MVP for the selected niche
 - launch_marketing_campaign: Launch a marketing campaign to acquire customers
 - optimize_and_scale: Optimize operations and scale revenue
@@ -240,7 +240,7 @@ Ethical constraints you must always follow:
                 self.save_state()
                 self.log_action(
                     f"Niche selected: {niche}",
-                    outcome="Success ÃÂÃÂ¢ÃÂÃÂÃÂÃÂ niche committed to state.json"
+                    outcome="Success -- niche committed to state.json"
                 )
                 self.action_queue.appendleft({"tool": "agent_action", "tool_input": {"action_name": "move_to_next_objective"}})
                 return True
