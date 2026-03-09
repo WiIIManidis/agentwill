@@ -1,4 +1,4 @@
-# AgentWill â Architecture
+# AgentWill Ã¢ÂÂ Architecture
 
 > This document explains how every file in the AgentWill repo connects, how data flows through the system, and how Will makes autonomous decisions.
 
@@ -7,26 +7,26 @@
 ## Directory Structure
 ```
 agentwill/
-âââ logs/
-â   âââ .gitkeep              # Keeps logs/ in version control without committing log files
-â   âââ agent_will.log        # Runtime log â every action Will takes, JSONL format
-â   âââ heartbeat.log         # Heartbeat monitor log â uptime checks
-âââ tools/
-â   âââ web_search.py         # Serper API wrapper â searches the web for market research
-â   âââ content_generator.py  # Generates marketing copy and slogans
-â   âââ data_analyzer.py      # Analyzes MRR, CAC, LTV, churn, and conversion metrics
-â   âââ budget_manager.py     # Tracks budget, MRR, phase progression, and spending
-â   âââ social_research.py    # Scans Reddit, Twitter/X, HackerNews, ProductHunt
-â   âââ heartbeat.py          # Monitors agent uptime, sends Discord/Telegram alerts
-âââ .env.example              # All environment variables documented with comments
-âââ .gitignore                # Excludes .env, state.json, and log files from version control
-âââ LICENSE                   # MIT
-âââ Makefile                  # make run, make logs, make state, make reset, make lint
-âââ README.md                 # Public-facing project overview and quickstart
-âââ agent_will.py             # Core agent â decision loop, action execution, state management
-âââ config.py                 # All constants and environment variable loading
-âââ requirements.txt          # All Python dependencies
-âââ state.json                # Runtime state â persists across restarts, never committed
+Ã¢ÂÂÃ¢ÂÂÃ¢ÂÂ logs/
+Ã¢ÂÂ   Ã¢ÂÂÃ¢ÂÂÃ¢ÂÂ .gitkeep              # Keeps logs/ in version control without committing log files
+Ã¢ÂÂ   Ã¢ÂÂÃ¢ÂÂÃ¢ÂÂ agent_will.log        # Runtime log Ã¢ÂÂ every action Will takes, JSONL format
+Ã¢ÂÂ   Ã¢ÂÂÃ¢ÂÂÃ¢ÂÂ heartbeat.log         # Heartbeat monitor log Ã¢ÂÂ uptime checks
+Ã¢ÂÂÃ¢ÂÂÃ¢ÂÂ tools/
+Ã¢ÂÂ   Ã¢ÂÂÃ¢ÂÂÃ¢ÂÂ web_search.py         # Serper API wrapper Ã¢ÂÂ searches the web for market research
+Ã¢ÂÂ   Ã¢ÂÂÃ¢ÂÂÃ¢ÂÂ content_generator.py  # Generates marketing copy and slogans
+Ã¢ÂÂ   Ã¢ÂÂÃ¢ÂÂÃ¢ÂÂ data_analyzer.py      # Analyzes MRR, CAC, LTV, churn, and conversion metrics
+Ã¢ÂÂ   Ã¢ÂÂÃ¢ÂÂÃ¢ÂÂ budget_manager.py     # Tracks budget, MRR, phase progression, and spending
+Ã¢ÂÂ   Ã¢ÂÂÃ¢ÂÂÃ¢ÂÂ social_research.py    # Scans Reddit, Twitter/X, HackerNews, ProductHunt
+Ã¢ÂÂ   Ã¢ÂÂÃ¢ÂÂÃ¢ÂÂ heartbeat.py          # Monitors agent uptime, sends Discord/Telegram alerts
+Ã¢ÂÂÃ¢ÂÂÃ¢ÂÂ .env.example              # All environment variables documented with comments
+Ã¢ÂÂÃ¢ÂÂÃ¢ÂÂ .gitignore                # Excludes .env, state.json, and log files from version control
+Ã¢ÂÂÃ¢ÂÂÃ¢ÂÂ LICENSE                   # MIT
+Ã¢ÂÂÃ¢ÂÂÃ¢ÂÂ Makefile                  # make run, make logs, make state, make reset, make lint
+Ã¢ÂÂÃ¢ÂÂÃ¢ÂÂ README.md                 # Public-facing project overview and quickstart
+Ã¢ÂÂÃ¢ÂÂÃ¢ÂÂ agent_will.py             # Core agent Ã¢ÂÂ decision loop, action execution, state management
+Ã¢ÂÂÃ¢ÂÂÃ¢ÂÂ config.py                 # All constants and environment variable loading
+Ã¢ÂÂÃ¢ÂÂÃ¢ÂÂ requirements.txt          # All Python dependencies
+Ã¢ÂÂÃ¢ÂÂÃ¢ÂÂ state.json                # Runtime state Ã¢ÂÂ persists across restarts, never committed
 ```
 
 ---
@@ -43,21 +43,21 @@ The brain. Contains the `AgentWill` class with four key methods:
 | `_build_system_prompt()` | Constructs the LLM system prompt with phase, MRR, budget, niche, and research |
 | `make_decision()` | Calls Claude API, parses JSON response, returns next action |
 | `execute_action()` | Executes the chosen action, updates budget/MRR, queues next action |
-| `run()` | Main loop â runs until TARGET_REVENUE is reached or agent halts |
+| `run()` | Main loop Ã¢ÂÂ runs until TARGET_REVENUE is reached or agent halts |
 
 ### `config.py`
-Single source of truth for all constants and environment variables. Everything `agent_will.py` needs is imported from here. All required API keys are validated on boot â Will raises `EnvironmentError` immediately if any required key is missing.
+Single source of truth for all constants and environment variables. Everything `agent_will.py` needs is imported from here. All required API keys are validated on boot Ã¢ÂÂ Will raises `EnvironmentError` immediately if any required key is missing.
 
 ### `state.json`
 Will's memory. Written after every action. Contains:
-- `phase` â current business phase
-- `current_objective_index` â which objective Will is working on
-- `selected_niche` â the niche Will committed to after market research
-- `last_research` â raw results from the last web and social search, injected into LLM prompts
-- `action_queue` â pending actions to execute before calling LLM again
-- `mrr_history` â last 5 MRR values, used for stuck detection
-- `exit_prep_triggered` â manual flag to trigger Exit Prep phase
-- `milestones` â timestamps of major revenue events
+- `phase` Ã¢ÂÂ current business phase
+- `current_objective_index` Ã¢ÂÂ which objective Will is working on
+- `selected_niche` Ã¢ÂÂ the niche Will committed to after market research
+- `last_research` Ã¢ÂÂ raw results from the last web and social search, injected into LLM prompts
+- `action_queue` Ã¢ÂÂ pending actions to execute before calling LLM again
+- `mrr_history` Ã¢ÂÂ last 5 MRR values, used for stuck detection
+- `exit_prep_triggered` Ã¢ÂÂ manual flag to trigger Exit Prep phase
+- `milestones` Ã¢ÂÂ timestamps of major revenue events
 
 ---
 
@@ -74,50 +74,50 @@ class ToolName:
 ### Tool Dependency Map
 ```
 agent_will.py
-âââ tools/web_search.py         â WEB_SEARCH_API_KEY (Serper)
-âââ tools/content_generator.py  â CONTENT_GENERATOR_API_KEY
-âââ tools/data_analyzer.py      â no external API
-âââ tools/budget_manager.py     â no external API
-âââ tools/social_research.py    â WEB_SEARCH_API_KEY (Serper) + RAPIDAPI_KEY (optional)
-âââ tools/heartbeat.py          â DISCORD_WEBHOOK_URL + TELEGRAM_BOT_TOKEN (both optional)
+Ã¢ÂÂÃ¢ÂÂÃ¢ÂÂ tools/web_search.py         Ã¢ÂÂ WEB_SEARCH_API_KEY (Serper)
+Ã¢ÂÂÃ¢ÂÂÃ¢ÂÂ tools/content_generator.py  Ã¢ÂÂ CONTENT_GENERATOR_API_KEY
+Ã¢ÂÂÃ¢ÂÂÃ¢ÂÂ tools/data_analyzer.py      Ã¢ÂÂ no external API
+Ã¢ÂÂÃ¢ÂÂÃ¢ÂÂ tools/budget_manager.py     Ã¢ÂÂ no external API
+Ã¢ÂÂÃ¢ÂÂÃ¢ÂÂ tools/social_research.py    Ã¢ÂÂ WEB_SEARCH_API_KEY (Serper) + RAPIDAPI_KEY (optional)
+Ã¢ÂÂÃ¢ÂÂÃ¢ÂÂ tools/heartbeat.py          Ã¢ÂÂ DISCORD_WEBHOOK_URL + TELEGRAM_BOT_TOKEN (both optional)
 ```
 
 ---
 
 ## The Decision Loop
 ```
-âââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
-â                     run() â main loop                    â
-â                                                         â
-â  1. Is action_queue empty?                              â
-â     YES â build context string â call make_decision()   â
-â     NO  â skip LLM call, use queued action              â
-â                 â                                       â
-â  2. make_decision()                                     â
-â     â check phase via check_budget_status()             â
-â     â check if MRR >= TARGET_REVENUE                    â
-â     â call _build_system_prompt()                       â
-â     â call Claude API (claude-sonnet-4-6)               â
-â     â parse JSON response                               â
-â     â validate structure                                â
-â     â return action dict                                â
-â                 â                                       â
-â  3. execute_action()                                    â
-â     â look up phase_config from budget_manager         â
-â     â execute chosen action (research, campaign, etc.) â
-â     â update budget/MRR                                 â
-â     â queue next logical action                         â
-â     â return True (continue) or False (halt)            â
-â                 â                                       â
-â  4. save_state()                                        â
-â     â write all state to state.json                     â
-â                 â                                       â
-â  5. Stuck detection                                     â
-â     â if MRR unchanged for 5 consecutive actions        â
-â     â halt with "Agent seems stuck" log entry           â
-â                 â                                       â
-â  6. sleep(0.5) â repeat                                 â
-âââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+Ã¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂ
+Ã¢ÂÂ                     run() Ã¢ÂÂ main loop                    Ã¢ÂÂ
+Ã¢ÂÂ                                                         Ã¢ÂÂ
+Ã¢ÂÂ  1. Is action_queue empty?                              Ã¢ÂÂ
+Ã¢ÂÂ     YES Ã¢ÂÂ build context string Ã¢ÂÂ call make_decision()   Ã¢ÂÂ
+Ã¢ÂÂ     NO  Ã¢ÂÂ skip LLM call, use queued action              Ã¢ÂÂ
+Ã¢ÂÂ                 Ã¢ÂÂ                                       Ã¢ÂÂ
+Ã¢ÂÂ  2. make_decision()                                     Ã¢ÂÂ
+Ã¢ÂÂ     Ã¢ÂÂ check phase via check_budget_status()             Ã¢ÂÂ
+Ã¢ÂÂ     Ã¢ÂÂ check if MRR >= TARGET_REVENUE                    Ã¢ÂÂ
+Ã¢ÂÂ     Ã¢ÂÂ call _build_system_prompt()                       Ã¢ÂÂ
+Ã¢ÂÂ     Ã¢ÂÂ call Claude API (claude-sonnet-4-6)               Ã¢ÂÂ
+Ã¢ÂÂ     Ã¢ÂÂ parse JSON response                               Ã¢ÂÂ
+Ã¢ÂÂ     Ã¢ÂÂ validate structure                                Ã¢ÂÂ
+Ã¢ÂÂ     Ã¢ÂÂ return action dict                                Ã¢ÂÂ
+Ã¢ÂÂ                 Ã¢ÂÂ                                       Ã¢ÂÂ
+Ã¢ÂÂ  3. execute_action()                                    Ã¢ÂÂ
+Ã¢ÂÂ     Ã¢ÂÂ look up phase_config from budget_manager         Ã¢ÂÂ
+Ã¢ÂÂ     Ã¢ÂÂ execute chosen action (research, campaign, etc.) Ã¢ÂÂ
+Ã¢ÂÂ     Ã¢ÂÂ update budget/MRR                                 Ã¢ÂÂ
+Ã¢ÂÂ     Ã¢ÂÂ queue next logical action                         Ã¢ÂÂ
+Ã¢ÂÂ     Ã¢ÂÂ return True (continue) or False (halt)            Ã¢ÂÂ
+Ã¢ÂÂ                 Ã¢ÂÂ                                       Ã¢ÂÂ
+Ã¢ÂÂ  4. save_state()                                        Ã¢ÂÂ
+Ã¢ÂÂ     Ã¢ÂÂ write all state to state.json                     Ã¢ÂÂ
+Ã¢ÂÂ                 Ã¢ÂÂ                                       Ã¢ÂÂ
+Ã¢ÂÂ  5. Stuck detection                                     Ã¢ÂÂ
+Ã¢ÂÂ     Ã¢ÂÂ if MRR unchanged for 5 consecutive actions        Ã¢ÂÂ
+Ã¢ÂÂ     Ã¢ÂÂ halt with "Agent seems stuck" log entry           Ã¢ÂÂ
+Ã¢ÂÂ                 Ã¢ÂÂ                                       Ã¢ÂÂ
+Ã¢ÂÂ  6. sleep(0.5) Ã¢ÂÂ repeat                                 Ã¢ÂÂ
+Ã¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂÃ¢ÂÂ
 ```
 
 ---
@@ -168,28 +168,28 @@ For `select_niche`, the LLM includes the niche name:
 
 ---
 
-## Research â Decision Feedback Loop
+## Research Ã¢ÂÂ Decision Feedback Loop
 ```
 perform_market_research()
-    â
-    âââ web_search.execute()        â returns results dict
-    âââ social_research.execute()   â returns results dict
-    â
-    âââ state['last_research'] = {
+    Ã¢ÂÂ
+    Ã¢ÂÂÃ¢ÂÂÃ¢ÂÂ web_search.execute()        Ã¢ÂÂ returns results dict
+    Ã¢ÂÂÃ¢ÂÂÃ¢ÂÂ social_research.execute()   Ã¢ÂÂ returns results dict
+    Ã¢ÂÂ
+    Ã¢ÂÂÃ¢ÂÂÃ¢ÂÂ state['last_research'] = {
             'web': results,
             'social': social_results
         }
         save_state()
-            â
-            âââ next make_decision() call
-                    â
-                    âââ _build_system_prompt()
-                            â
-                            âââ injects web snippets + social result count
+            Ã¢ÂÂ
+            Ã¢ÂÂÃ¢ÂÂÃ¢ÂÂ next make_decision() call
+                    Ã¢ÂÂ
+                    Ã¢ÂÂÃ¢ÂÂÃ¢ÂÂ _build_system_prompt()
+                            Ã¢ÂÂ
+                            Ã¢ÂÂÃ¢ÂÂÃ¢ÂÂ injects web snippets + social result count
                                 into system prompt
-                                    â
-                                    âââ LLM reasons about findings
-                                        â calls select_niche with
+                                    Ã¢ÂÂ
+                                    Ã¢ÂÂÃ¢ÂÂÃ¢ÂÂ LLM reasons about findings
+                                        Ã¢ÂÂ calls select_niche with
                                           informed niche choice
 ```
 
@@ -219,7 +219,7 @@ Will monitors his own progress. If `current_objective_index >= 2` and MRR has no
 
 Will is designed to restart cleanly. On boot:
 1. `load_state()` reads `state.json`
-2. All previous state is restored â phase, objective, niche, research, action queue
+2. All previous state is restored Ã¢ÂÂ phase, objective, niche, research, action queue
 3. If `action_queue` is non-empty, Will resumes mid-sequence without calling the LLM
 4. If `action_queue` is empty, Will calls `make_decision()` with full context including previous research
 
