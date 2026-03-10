@@ -204,11 +204,13 @@ Ethical constraints you must always follow:
                 if deduct_response["status"] == "success":
                     results = self.tools["web_search"].execute(
                         query="market trends, unmet needs, competitor analysis",
-                        search_type='general'
+                        search_type='general',
+                        niche=self.state.get('selected_niche')
                     )
                     social_results = self.tools['social_research'].execute(
                         query='market trends, unmet needs, competitor analysis',
-                        platform='all'
+                        platform='all',
+                        niche=self.state.get('selected_niche')
                     )
 
                     # Save research to state for LLM context injection
