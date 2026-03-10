@@ -1,9 +1,10 @@
+import json
 import requests
 import time
 import logging
 from datetime import datetime
 from tenacity import retry, stop_after_attempt, wait_exponential
-from config import WEB_SEARCH_API_KEY
+from config import WEB_SEARCH_API_KEY, RAPIDAPI_KEY
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -11,9 +12,9 @@ logger = logging.getLogger(__name__)
 
 LOG_FILE = "logs/social_research.log"
 
+
 def _log(entry: dict):
     with open(LOG_FILE, "a") as f:
-        import json
         f.write(json.dumps(entry) + "\n")
 
 
@@ -30,14 +31,25 @@ class SocialResearchTool:
     RAPIDAPI_URL   = "https://twitter154.p.rapidapi.com/search/search"
 
     def __init__(self):
-        self.api_key = WEB_SEARCH_API_KEY  # Serper key reused for Reddit/PH via Google
+        self.api_key = WEB_SEARCH_API_KEY       # Serper key reused for Reddit/PH via Google
+        self.rapidapi_key = RAPIDAPI_KEY         # None if not set -- triggers Serper fallback
         self._log_init()
 
     def _log_init(self):
         _log({
             "timestamp": datetime.now().isoformat(),
-            "event": "SocialResearchTool initialized"
+            "event": "SocialResearchTool initialized",
+            "rapidapi_available": self.rapidapi_key is not None
         })
+
+    def build_niche_query(self, base_query: str, niche: str = None) -> str:
+        """
+        Enriches a base query with niche context when available.
+        Mirrors web_search.py's build_niche_query for consistency.
+        """
+        if niche and niche not in (None, "Not yet identified", "Not specified"):
+            return f"{base_query} for {niche}"
+        return base_query
 
     # ------------------------------------------------------------------ #
     #  REDDIT                                                              #
@@ -45,7 +57,7 @@ class SocialResearchTool:
     @retry(stop=stop_after_attempt(3), wait=wait_exponential(multiplier=1, min=2, max=10))
     def search_reddit(self, query: str, subreddit: str = None, num_results: int = 5) -> dict:
         """
-        Search Reddit via Serper's Google News endpoint.
+        Search Reddit via Serper's Google search endpoint.
         Optionally scope to a specific subreddit.
         """
         start = time.time()
@@ -72,27 +84,27 @@ class SocialResearchTool:
             ]
 
             entry = {
-                "timestamp":           datetime.now().isoformat(),
-                "platform":            "reddit",
-                "query":               query,
-                "subreddit":           subreddit,
+                "timestamp":            datetime.now().isoformat(),
+                "platform":             "reddit",
+                "query":                query,
+                "subreddit":            subreddit,
                 "num_results_returned": len(results),
-                "status":              "success",
-                "duration_seconds":    round(time.time() - start, 3),
-                "results":             results
+                "status":               "success",
+                "duration_seconds":     round(time.time() - start, 3),
+                "results":              results
             }
             _log(entry)
             return entry
 
         except Exception as e:
             entry = {
-                "timestamp":           datetime.now().isoformat(),
-                "platform":            "reddit",
-                "query":               query,
-                "status":              "error",
-                "error":               str(e),
-                "duration_seconds":    round(time.time() - start, 3),
-                "results":             []
+                "timestamp":        datetime.now().isoformat(),
+                "platform":         "reddit",
+                "query":            query,
+                "status":           "error",
+                "error":            str(e),
+                "duration_seconds": round(time.time() - start, 3),
+                "results":          []
             }
             _log(entry)
             return entry
@@ -104,7 +116,6 @@ class SocialResearchTool:
     def search_twitter(self, query: str, num_results: int = 10, rapidapi_key: str = None) -> dict:
         """
         Search Twitter/X via RapidAPI Twitter scraper.
-        Requires a RapidAPI key passed at call time or set in environment.
         Falls back to Serper Google search scoped to twitter.com if no key.
         """
         start = time.time()
@@ -173,11 +184,11 @@ class SocialResearchTool:
 
             results = [
                 {
-                    "title":   t.get("user", {}).get("username", ""),
-                    "snippet": t.get("text", ""),
-                    "url":     f"https://twitter.com/i/web/status/{t.get('tweet_id','')}",
-                    "source":  "twitter",
-                    "likes":   t.get("favorite_count", 0),
+                    "title":    t.get("user", {}).get("username", ""),
+                    "snippet":  t.get("text", ""),
+                    "url":      f"https://twitter.com/i/web/status/{t.get('tweet_id', '')}",
+                    "source":   "twitter",
+                    "likes":    t.get("favorite_count", 0),
                     "retweets": t.get("retweet_count", 0)
                 }
                 for t in data.get("results", [])[:num_results]
@@ -215,8 +226,7 @@ class SocialResearchTool:
     @retry(stop=stop_after_attempt(3), wait=wait_exponential(multiplier=1, min=2, max=10))
     def search_hackernews(self, query: str, num_results: int = 5) -> dict:
         """
-        Search HackerNews via the free Algolia HN API.
-        No API key required.
+        Search HackerNews via the free Algolia HN API. No API key required.
         """
         start = time.time()
 
@@ -231,11 +241,11 @@ class SocialResearchTool:
 
             results = [
                 {
-                    "title":   hit.get("title", ""),
-                    "snippet": hit.get("story_text", "") or hit.get("comment_text", ""),
-                    "url":     hit.get("url", f"https://news.ycombinator.com/item?id={hit.get('objectID','')}"),
-                    "source":  "hackernews",
-                    "points":  hit.get("points", 0),
+                    "title":    hit.get("title", ""),
+                    "snippet":  hit.get("story_text", "") or hit.get("comment_text", ""),
+                    "url":      hit.get("url", f"https://news.ycombinator.com/item?id={hit.get('objectID', '')}"),
+                    "source":   "hackernews",
+                    "points":   hit.get("points", 0),
                     "comments": hit.get("num_comments", 0)
                 }
                 for hit in data.get("hits", [])[:num_results]
@@ -273,7 +283,6 @@ class SocialResearchTool:
     def search_producthunt(self, query: str, num_results: int = 5) -> dict:
         """
         Search ProductHunt via Serper Google search scoped to producthunt.com.
-        For richer data, a ProductHunt API v2 token can be added later.
         """
         start = time.time()
 
@@ -344,10 +353,10 @@ class SocialResearchTool:
             "duration_seconds": round(time.time() - start, 3),
             "status":           "success",
             "platforms": {
-                "reddit":       reddit,
-                "twitter":      twitter,
-                "hackernews":   hackernews,
-                "producthunt":  producthunt,
+                "reddit":      reddit,
+                "twitter":     twitter,
+                "hackernews":  hackernews,
+                "producthunt": producthunt,
             },
             "total_results": (
                 reddit["num_results_returned"] +
@@ -404,19 +413,25 @@ class SocialResearchTool:
             }
         }
 
+    # ------------------------------------------------------------------ #
+    #  UNIFIED ENTRY POINT                                                 #
+    # ------------------------------------------------------------------ #
     def execute(self, query: str, platform: str = "all", subreddit: str = None,
-                num_results: int = 5, rapidapi_key: str = None) -> dict:
+                num_results: int = 5, niche: str = None) -> dict:
         """
         Unified entry point matching web_search.py's .execute() interface.
         Called by agent_will.py as: self.tools["social_research"].execute(...)
+        Niche context is injected into the query when available.
         """
+        enriched_query = self.build_niche_query(query, niche)
+
         if platform == "reddit":
-            return self.search_reddit(query, subreddit=subreddit, num_results=num_results)
+            return self.search_reddit(enriched_query, subreddit=subreddit, num_results=num_results)
         elif platform == "twitter":
-            return self.search_twitter(query, num_results=num_results, rapidapi_key=rapidapi_key)
+            return self.search_twitter(enriched_query, num_results=num_results, rapidapi_key=self.rapidapi_key)
         elif platform == "hackernews":
-            return self.search_hackernews(query, num_results=num_results)
+            return self.search_hackernews(enriched_query, num_results=num_results)
         elif platform == "producthunt":
-            return self.search_producthunt(query, num_results=num_results)
+            return self.search_producthunt(enriched_query, num_results=num_results)
         else:
-            return self.search_all(query, num_results=num_results, rapidapi_key=rapidapi_key)
+            return self.search_all(enriched_query, num_results=num_results, rapidapi_key=self.rapidapi_key)
