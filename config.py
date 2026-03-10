@@ -1,7 +1,7 @@
-from dotenv import load_dotenv
-load_dotenv()
-
 import os
+from dotenv import load_dotenv
+
+load_dotenv()
 
 AGENT_NAME = "Will"
 VERSION = "0.1.0"
@@ -22,13 +22,12 @@ WEB_SEARCH_API_KEY = os.getenv("WEB_SEARCH_API_KEY")
 if not WEB_SEARCH_API_KEY:
     raise EnvironmentError("WEB_SEARCH_API_KEY environment variable not set.")
 
-CONTENT_GENERATOR_API_KEY = os.getenv("CONTENT_GENERATOR_API_KEY")
-if not CONTENT_GENERATOR_API_KEY:
-    raise EnvironmentError("CONTENT_GENERATOR_API_KEY environment variable not set.")
-
 ANTHROPIC_API_KEY = os.getenv("ANTHROPIC_API_KEY")
 if not ANTHROPIC_API_KEY:
     raise EnvironmentError("ANTHROPIC_API_KEY environment variable not set.")
+
+# Aliased -- content generation uses the Anthropic client directly
+CONTENT_GENERATOR_API_KEY = ANTHROPIC_API_KEY
 
 # Optional API keys
 RAPIDAPI_KEY = os.getenv("RAPIDAPI_KEY")  # Optional: unlocks full Twitter/X data via RapidAPI
