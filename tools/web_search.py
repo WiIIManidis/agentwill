@@ -3,8 +3,10 @@ import json
 import time
 import requests
 from datetime import datetime
-from tenacity import retry, wait_exponential, stop_after_attempt, 
-                     retry_if_exception_type, before_sleep_log
+from tenacity import (
+    retry, wait_exponential, stop_after_attempt,
+    retry_if_exception_type, before_sleep_log
+)
 import logging
 
 # Configure logging for web search
@@ -16,7 +18,7 @@ logging.basicConfig(
     format='%(message)s'
 )
 
-# --- Configuration (assuming config.py exists and has WEB_SEARCH_API_KEY) ---
+# --- Configuration ---
 try:
     from config import WEB_SEARCH_API_KEY
 except ImportError:
@@ -27,10 +29,11 @@ except ImportError:
 # --- Serper API Configuration ---
 SERPER_API_URL = "https://google.serper.dev/search"
 
+
 class WebSearchTool:
     def __init__(self):
         self.name = "web_search"
-        self.description = "Performs a web search using a search engine API (e.g., Serper) and returns structured results."
+        self.description = "Performs a web search using the Serper API and returns structured results including titles, snippets, and URLs."
         self.parameters = {
             "type": "object",
             "properties": {
@@ -54,6 +57,23 @@ class WebSearchTool:
             },
             "required": ["query"]
         }
+
+    def get_tool_schema(self):
+        """Returns the OpenClaw tool schema for LLM tool use."""
+        return {
+            "name": self.name,
+            "description": self.description,
+            "parameters": self.parameters
+        }
+
+    def build_niche_query(self, base_query: str, niche: str = None) -> str:
+        """
+        Enriches a base query with the selected niche when available.
+        Ensures Will's market research is always niche-specific once a niche is selected.
+        """
+        if niche and niche not in (None, "Not yet identified", "Not specified"):
+            return f"{base_query} for {niche}"
+        return base_query
 
     @retry(
         wait=wait_exponential(multiplier=1, min=4, max=10),
@@ -79,20 +99,29 @@ class WebSearchTool:
             payload["tbm"] = "vid"
         elif search_type == "shopping":
             payload["tbm"] = "shop"
-        # For 'general', no specific 'tbm' is needed as it's the default
+        # For 'general', no specific 'tbm' needed -- it's the default
 
         response = requests.post(SERPER_API_URL, headers=headers, json=payload, timeout=15)
-        response.raise_for_status()  # Raise HTTPError for bad responses (4xx or 5xx)
+        response.raise_for_status()
         return response.json()
 
-    def execute(self, query: str, num_results: int = 5, search_type: str = "general") -> dict:
+    def execute(self, query: str, num_results: int = 5, search_type: str = "general", niche: str = None) -> dict:
+        """
+        Executes a web search via the Serper API.
+        If niche is provided, the query is automatically enriched with niche context.
+        """
+        # Enrich query with niche context if available
+        enriched_query = self.build_niche_query(query, niche)
+
         start_time = time.time()
         search_id = datetime.now().strftime("%Y%m%d%H%M%S%f")
         log_entry = {
             "id": search_id,
             "timestamp": datetime.now().isoformat(),
             "tool": self.name,
-            "query": query,
+            "query": enriched_query,
+            "original_query": query,
+            "niche": niche,
             "num_results_requested": num_results,
             "search_type": search_type,
             "status": "initiated"
@@ -104,7 +133,7 @@ class WebSearchTool:
         error_message = None
 
         try:
-            serper_response = self._perform_serper_search(query, num_results, search_type)
+            serper_response = self._perform_serper_search(enriched_query, num_results, search_type)
 
             if search_type == "news" and "news" in serper_response:
                 for item in serper_response["news"]:
@@ -114,27 +143,28 @@ class WebSearchTool:
                         "url": item.get("link")
                     })
             elif search_type == "images" and "images" in serper_response:
-                 for item in serper_response["images"]:
+                for item in serper_response["images"]:
                     results_list.append({
                         "title": item.get("title"),
-                        "snippet": item.get("snippet"), # Often not present for images
+                        "snippet": item.get("snippet"),
                         "url": item.get("imageUrl")
                     })
             elif search_type == "videos" and "videos" in serper_response:
-                 for item in serper_response["videos"]:
+                for item in serper_response["videos"]:
                     results_list.append({
                         "title": item.get("title"),
                         "snippet": item.get("snippet"),
                         "url": item.get("link")
                     })
             elif search_type == "shopping" and "shopping" in serper_response:
-                 for item in serper_response["shopping"]:
+                for item in serper_response["shopping"]:
                     results_list.append({
                         "title": item.get("title"),
                         "snippet": item.get("snippet"),
                         "url": item.get("link")
                     })
-            else: # Default to 'organic' results for general search or if specific type not found
+            else:
+                # Default to organic results for general search
                 if "organic" in serper_response:
                     for item in serper_response["organic"]:
                         results_list.append({
@@ -172,7 +202,9 @@ class WebSearchTool:
         response_data = {
             "id": search_id,
             "timestamp": datetime.now().isoformat(),
-            "query": query,
+            "query": enriched_query,
+            "original_query": query,
+            "niche": niche,
             "search_type": search_type,
             "num_results_returned": len(results_list),
             "results": results_list,
@@ -183,20 +215,3 @@ class WebSearchTool:
 
         logging.info(json.dumps(response_data))
         return response_data
-
-# Example of how AgentWill might use this tool:
-# if __name__ == "__main__":
-#     search_tool = WebSearchTool()
-#     print("\n--- General Search ---")
-#     results = search_tool.execute(query="latest AI market trends", num_results=3)
-#     print(json.dumps(results, indent=2))
-
-#     print("\n--- News Search ---")
-#     results = search_tool.execute(query="recent breakthroughs in quantum computing", num_results=2, search_type="news")
-#     print(json.dumps(results, indent=2))
-
-#     print("\n--- Invalid Search (too many results) ---")
-#     # This would be caught by AgentWill's parameter validation before calling execute
-#     # For direct testing, we can simulate it:
-#     # results = search_tool.execute(query="test", num_results=15)
-#     # print(json.dumps(results, indent=2))
