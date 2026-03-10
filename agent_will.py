@@ -114,7 +114,7 @@ Current State:
 {research_summary}
 Available agent actions:
 - perform_market_research: Search web and social platforms for market trends and pain points
-- select_niche: Commit to a specific business niche based on research findings - use this after perform_market_research
+- select_niche: Commit to a specific business niche based on research findings — use this after perform_market_research
 - design_and_build_mvp: Design and build the MVP for the selected niche
 - launch_marketing_campaign: Launch a marketing campaign to acquire customers
 - optimize_and_scale: Optimize operations and scale revenue
@@ -240,7 +240,7 @@ Ethical constraints you must always follow:
                 self.save_state()
                 self.log_action(
                     f"Niche selected: {niche}",
-                    outcome="Success - niche committed to state.json"
+                    outcome="Success — niche committed to state.json"
                 )
                 self.action_queue.appendleft({"tool": "agent_action", "tool_input": {"action_name": "move_to_next_objective"}})
                 return True
@@ -250,6 +250,7 @@ Ethical constraints you must always follow:
                 deduct_response = self.budget_manager.deduct_funds(cost, description="MVP Development", mrr=self.budget_manager.mrr)
                 if deduct_response["status"] == "success":
                     self.log_action("Designed and built MVP", cost=cost, outcome="MVP ready for launch.")
+                    self.action_queue.appendleft({"tool": "agent_action", "tool_input": {"action_name": "move_to_next_objective"}})
                     return True
                 else:
                     self.log_action("Attempted MVP development", cost=cost, outcome=f"Failed: {deduct_response['message']}")
@@ -265,7 +266,7 @@ Ethical constraints you must always follow:
                         prompt=f"short marketing slogan for {self.state.get('selected_niche', 'a new SaaS product')}",
                         mrr_phase=self.phase
                     )
-                    generated_content = f"Slogan: {content_gen_output['generation_prompt'][:50]}..."
+                    generated_content = f"Slogan: {content_gen_output['generated_content'][:50]}..."
                     self.log_action("Generated marketing content", "content_generator", cost=cost, outcome=f"Content: {generated_content}")
                     return True
                 else:
