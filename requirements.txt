@@ -2,7 +2,8 @@ tenacity
 requests
 python-dotenv
 anthropic
-stripe
-flask
 pyflakes
 rich
+pytest
+stripe
+flash
