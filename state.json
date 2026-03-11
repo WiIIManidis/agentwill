@@ -6,18 +6,16 @@
     "exit_prep_triggered": false,
     "selected_niche": null,
     "last_research": {},
-    "business_listed": null,
-    "business_sold": null,
-    "exit_multiple": null,
-    "sale_price": null,
     "milestones": {
         "first_dollar": null,
         "mrr_100": null,
         "mrr_1k": null,
-        "mrr_5k": null,
-        "mrr_20k": null,
+        "mrr_10k": null,
+        "mrr_25k": null,
         "mrr_50k": null,
         "business_listed": null,
-        "business_sold": null
+        "business_sold": null,
+        "exit_multiple": null,
+        "sale_price": null
     }
 }
