@@ -32,6 +32,11 @@ CONTENT_GENERATOR_API_KEY = ANTHROPIC_API_KEY
 # Optional API keys
 RAPIDAPI_KEY = os.getenv("RAPIDAPI_KEY")  # Optional: unlocks full Twitter/X data via RapidAPI
 
+# Optional -- heartbeat alerts
+DISCORD_WEBHOOK_URL = os.getenv("DISCORD_WEBHOOK_URL")
+TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
+TELEGRAM_CHAT_ID = os.getenv("TELEGRAM_CHAT_ID")
+
 # OpenClaw Specific Constants
 OPENCLAW_MODEL = os.getenv("OPENCLAW_MODEL", "claude-sonnet-4-6")
 HEARTBEAT_INTERVAL = int(os.getenv("HEARTBEAT_INTERVAL", 1800))
