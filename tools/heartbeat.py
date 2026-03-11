@@ -1,13 +1,21 @@
 import os
 import time
-import requests
+import json
 import logging
+import requests
 from datetime import datetime
+from config import (
+    HEARTBEAT_INTERVAL,
+    MAX_CONSECUTIVE_FAILURES,
+    DISCORD_WEBHOOK_URL,
+    TELEGRAM_BOT_TOKEN,
+    TELEGRAM_CHAT_ID,
+    LOG_FILE
+)
 
 # Ensure logs directory exists before configuring FileHandler
 os.makedirs("logs", exist_ok=True)
 
-# Configure logging
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(levelname)s - %(message)s',
@@ -20,96 +28,102 @@ logging.basicConfig(
 
 class HeartbeatTool:
     def __init__(self):
-        self.discord_webhook_url = os.getenv("DISCORD_WEBHOOK_URL")
-        self.telegram_bot_token = os.getenv("TELEGRAM_BOT_TOKEN")
-        self.telegram_chat_id = os.getenv("TELEGRAM_CHAT_ID")
-        self.agent_will_status_endpoint = os.getenv("AGENT_WILL_STATUS_ENDPOINT", "http://localhost:8000/status")
-        self.last_successful_check = None
-        logging.info("HeartbeatTool initialized.")
+        self.logger = logging.getLogger(__name__)
+        self.consecutive_failures = 0
+        self.discord_webhook_url = DISCORD_WEBHOOK_URL
+        self.telegram_bot_token = TELEGRAM_BOT_TOKEN
+        self.telegram_chat_id = TELEGRAM_CHAT_ID
+        self._log_init()
 
-    def _send_discord_alert(self, message: str):
-        if not self.discord_webhook_url:
-            logging.warning("Discord webhook URL not configured. Cannot send alert.")
-            return
-        try:
-            payload = {"content": message}
-            response = requests.post(self.discord_webhook_url, json=payload, timeout=10)
-            response.raise_for_status()
-            logging.info("Discord alert sent successfully.")
-        except requests.exceptions.RequestException as e:
-            logging.error(f"Failed to send Discord alert: {e}")
-
-    def _send_telegram_alert(self, message: str):
-        if not self.telegram_bot_token or not self.telegram_chat_id:
-            logging.warning("Telegram bot token or chat ID not configured. Cannot send alert.")
-            return
-        try:
-            url = f"https://api.telegram.org/bot{self.telegram_bot_token}/sendMessage"
-            payload = {"chat_id": self.telegram_chat_id, "text": message}
-            response = requests.post(url, json=payload, timeout=10)
-            response.raise_for_status()
-            logging.info("Telegram alert sent successfully.")
-        except requests.exceptions.RequestException as e:
-            logging.error(f"Failed to send Telegram alert: {e}")
-
-    def _check_agent_will_status(self) -> bool:
-        try:
-            response = requests.get(self.agent_will_status_endpoint, timeout=5)
-            response.raise_for_status()
-            status_data = response.json()
-            if status_data.get("status") == "running":
-                return True
-            else:
-                logging.warning(f"AgentWill status endpoint returned non-running status: {status_data}")
-                return False
-        except requests.exceptions.RequestException as e:
-            logging.error(f"Failed to reach AgentWill status endpoint {self.agent_will_status_endpoint}: {e}")
-            return False
-
-    def run_heartbeat_check(self):
-        logging.info("Running heartbeat check for AgentWill...")
-        is_running = self._check_agent_will_status()
-
-        if is_running:
-            self.last_successful_check = datetime.now()
-            logging.info("AgentWill is running normally.")
-        else:
-            alert_message = (
-                f"ALERT: AgentWill is not responding or not running! "
-                f"Last successful check: {self.last_successful_check.isoformat() if self.last_successful_check else 'Never'}"
-            )
-            logging.critical(alert_message)
-            self._send_discord_alert(alert_message)
-            self._send_telegram_alert(alert_message)
+    def _log_init(self):
+        self.logger.info(json.dumps({
+            "event": "heartbeat_init",
+            "heartbeat_interval": HEARTBEAT_INTERVAL,
+            "max_consecutive_failures": MAX_CONSECUTIVE_FAILURES,
+            "discord_enabled": bool(self.discord_webhook_url),
+            "telegram_enabled": bool(self.telegram_bot_token and self.telegram_chat_id)
+        }))
 
     def get_tool_schema(self) -> dict:
         return {
-            "name": "heartbeat_monitor",
+            "name": "heartbeat",
             "description": (
-                "Monitors the operational status of AgentWill. "
-                "Checks a predefined status endpoint and sends alerts via Discord/Telegram "
-                "if AgentWill is detected as not running. Designed to be run as a cron job."
+                "Monitors AgentWill's uptime and sends alerts via Discord or Telegram "
+                "if the agent fails or stops responding. Call periodically to confirm Will is alive."
             ),
             "parameters": {
                 "type": "object",
-                "properties": {},
-                "required": []
+                "properties": {
+                    "status": {
+                        "type": "string",
+                        "enum": ["alive", "error", "halted"],
+                        "description": "Current agent status to report."
+                    },
+                    "message": {
+                        "type": "string",
+                        "description": "Optional status message or error detail."
+                    }
+                },
+                "required": ["status"]
             }
         }
 
-    def execute(self) -> dict:
-        """
-        Executes a single heartbeat check. Designed to be called by the agent
-        or an external scheduler (cron job).
-        """
-        self.run_heartbeat_check()
-        return {"status": "Heartbeat check completed. Check logs for details."}
+    def send_discord_alert(self, message: str):
+        if not self.discord_webhook_url:
+            return
+        try:
+            requests.post(self.discord_webhook_url, json={"content": message}, timeout=10)
+            self.logger.info(json.dumps({"event": "discord_alert_sent", "message": message}))
+        except Exception as e:
+            self.logger.error(json.dumps({"event": "discord_alert_failed", "error": str(e)}))
 
+    def send_telegram_alert(self, message: str):
+        if not self.telegram_bot_token or not self.telegram_chat_id:
+            return
+        try:
+            url = f"https://api.telegram.org/bot{self.telegram_bot_token}/sendMessage"
+            requests.post(url, json={"chat_id": self.telegram_chat_id, "text": message}, timeout=10)
+            self.logger.info(json.dumps({"event": "telegram_alert_sent", "message": message}))
+        except Exception as e:
+            self.logger.error(json.dumps({"event": "telegram_alert_failed", "error": str(e)}))
 
-if __name__ == "__main__":
-    # Ensure env vars are set before running:
-    # DISCORD_WEBHOOK_URL, TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID, AGENT_WILL_STATUS_ENDPOINT
-    # Schedule via cron: */30 * * * * cd ~/agentwill && python tools/heartbeat.py
+    def alert(self, message: str):
+        self.send_discord_alert(message)
+        self.send_telegram_alert(message)
 
-    heartbeat = HeartbeatTool()
-    heartbeat.run_heartbeat_check()
+    def execute(self, status: str = "alive", message: str = "") -> dict:
+        timestamp = datetime.now().isoformat()
+
+        if status == "alive":
+            self.consecutive_failures = 0
+            self.logger.info(json.dumps({
+                "event": "heartbeat_ok",
+                "timestamp": timestamp,
+                "message": message
+            }))
+        else:
+            self.consecutive_failures += 1
+            alert_message = f"[AgentWill] Status: {status} | {message} | {timestamp}"
+            self.logger.warning(json.dumps({
+                "event": "heartbeat_alert",
+                "status": status,
+                "consecutive_failures": self.consecutive_failures,
+                "timestamp": timestamp,
+                "message": message
+            }))
+            self.alert(alert_message)
+
+            if self.consecutive_failures >= MAX_CONSECUTIVE_FAILURES:
+                critical = f"[AgentWill] CRITICAL: {self.consecutive_failures} consecutive failures. Will may be down."
+                self.alert(critical)
+                self.logger.error(json.dumps({
+                    "event": "heartbeat_critical",
+                    "consecutive_failures": self.consecutive_failures
+                }))
+
+        return {
+            "status": status,
+            "timestamp": timestamp,
+            "consecutive_failures": self.consecutive_failures,
+            "message": message
+        }
